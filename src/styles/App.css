@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #eef5f1;
+}
+
+* {
+  box-sizing: border-box;
+}
