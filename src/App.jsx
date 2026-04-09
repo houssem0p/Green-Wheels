@@ -1,26 +1,24 @@
-import { useState } from 'react'
-import Header from './components/Header/Header'
-import AuthLayout from './components/AuthLayout/AuthLayout'
-import LoginForm from './components/LoginForm/LoginForm'
-import SignupForm from './components/SignupForm/SignupForm'
-import ForgotPasswordForm from './components/ForgotPasswordForm/ForgotPasswordForm'
-import './App.css'
-
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/layout/Navbar";
+import Home from "./pages/Home";
+import Vehicules from "./pages/Vehicules";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 function App() {
-  const [currentView, setCurrentView] = useState('login') // 'login', 'signup', 'forgot'
-
   return (
-    <div className="app-container">
-      <Header />
-      <main className="main-content">
-        <AuthLayout currentView={currentView} setCurrentView={setCurrentView}>
-          {currentView === 'login' && <LoginForm setCurrentView={setCurrentView} />}
-          {currentView === 'signup' && <SignupForm />}
-          {currentView === 'forgot' && <ForgotPasswordForm setCurrentView={setCurrentView} />}
-        </AuthLayout>
-      </main>
-    </div>
-  )
+    <>
+      <Navbar /> 
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/vehicules" element={<Vehicules />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/ForgotPassword" element={<ForgotPassword />} />
+      </Routes>
+    </>
+  );
 }
 
-export default App
+export default App;
