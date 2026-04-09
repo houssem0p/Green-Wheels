@@ -4,6 +4,7 @@
   justify-content: space-between;
   padding: 80px 100px;
   background: #eef5f1;
+  
 }
 
 .left {
@@ -71,6 +72,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: 0.2s;
+  color: black;
 }
 
 .secondary:hover {

@@ -1,19 +1,57 @@
 import styles from "./Navbar.module.css";
-
+import logo from "../../assets/logo.png";
+import { NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 function Navbar() {
+  const navigate = useNavigate();
   return (
     <nav className={styles.navbar}>
-      <div className={styles.logo}>Green Wheels</div>
+      {/* LEFT */}
+      <div className={styles.left}>
+        <img src={logo} alt="logo" className={styles.logo} />
+      </div>
 
-      <ul className={styles.navLinks}>
-        <li>Accueil</li>
-        <li>Catalogue</li>
-        <li>Comment ça marche</li>
-        <li>Contact</li>
-      </ul>
+      {/* CENTER */}
+        <ul className={styles.navLinks}>
+          <li>
+            <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              isActive ? styles.active : ""
+            }
+          >
+            Accueil
+          </NavLink>
+          </li>
 
-      <div className={styles.rightSection}>
-        <button className={styles.reserveBtn}>Réserver</button>
+          <li>
+            <NavLink
+              to="/vehicules"
+              className={({ isActive }) =>
+                isActive ? styles.active : ""
+              }
+            >
+              Vélos
+            </NavLink>
+          </li>
+
+          <li>Stations</li>
+          <li>Abonnements</li>
+          <li>À propos</li>
+          <li>Contacts</li>
+          <li>FAQ</li>
+        </ul>
+
+      {/* RIGHT */}
+      <div className={styles.right}>
+        <button className={styles.iconBtn}>🌙</button>
+        <button
+            className={styles.loginBtn}
+            onClick={() => navigate("/login")}
+          >
+            Connexion
+          </button>
       </div>
     </nav>
   );

@@ -1,4 +1,5 @@
 import styles from "./Hero.module.css";
+import bikeImg from "../../assets/bike.png";
 
 function Hero() {
   return (
@@ -9,27 +10,28 @@ function Hero() {
         </span>
 
         <h1 className={styles.title}>
-          Roulez <span className={styles.green}>vert</span>, roulez libre
+          Roulez <span className={styles.green}>vert</span>, <br />
+          roulez libre
         </h1>
 
         <p className={styles.description}>
           Louez un vélo ou un scooter électrique en quelques clics.
-          Contribuez à un futur plus propre avec GreenWheels.
+          Explorez votre ville de manière écologique avec GreenWheels.
         </p>
 
         <div className={styles.buttons}>
-          <button className={styles.primary}>Voir le catalogue</button>
-          <button className={styles.secondary}>Comment ça marche</button>
-        </div>
+          <button className={styles.primary}>
+            Explorer les vélos →
+          </button>
 
-        <div className={styles.features}>
-          <span>⚡ 100% Électrique</span>
-          <span>🍃 Zéro émission</span>
+          <button className={styles.secondary}>
+            📍 Voir les stations
+          </button>
         </div>
       </div>
 
       <div className={styles.right}>
-        <img src="/bike.jpg" alt="scooter" />
+        <img src={bikeImg} alt="bike" />
       </div>
     </section>
   );
