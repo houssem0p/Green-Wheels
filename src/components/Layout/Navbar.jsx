@@ -2,8 +2,12 @@ import styles from "./Navbar.module.css";
 import logo from "../../assets/logo.png";
 import { NavLink } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
+
 function Navbar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
   return (
     <nav className={styles.navbar}>
       {/* LEFT */}
@@ -45,13 +49,34 @@ function Navbar() {
 
       {/* RIGHT */}
       <div className={styles.right}>
-        <button className={styles.iconBtn}>🌙</button>
-        <button
+        <button type="button" className={styles.iconBtn}>
+          🌙
+        </button>
+        {user === undefined ? null : user ? (
+          <>
+            <span className={styles.userLabel} title={user.email}>
+              {user.full_name || user.email}
+            </span>
+            <button
+              type="button"
+              className={styles.loginBtn}
+              onClick={async () => {
+                await logout();
+                navigate("/");
+              }}
+            >
+              Déconnexion
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
             className={styles.loginBtn}
             onClick={() => navigate("/login")}
           >
             Connexion
           </button>
+        )}
       </div>
     </nav>
   );

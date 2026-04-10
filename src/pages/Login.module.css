@@ -137,3 +137,15 @@
 .googleBtn img {
   width: 18px;
 }
+
+.error {
+  color: #b91c1c;
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.loginBtn:disabled,
+.googleBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
