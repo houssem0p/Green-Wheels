@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 07, 2026 at 06:00 PM
+-- Generation Time: Apr 10, 2026 at 05:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -101,7 +101,6 @@ CREATE TABLE `stations` (
   `latitude` decimal(10,2) NOT NULL,
   `longitude` decimal(10,2) NOT NULL,
   `total_slots` int(5) NOT NULL,
-  `available_slots` int(5) NOT NULL,
   `is_active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

@@ -23,6 +23,18 @@ db.connect((err) => {
 app.use(cors());
 app.use(express.json());
 
+// routes
+const stationRoutes = require('./routes/stationRoutes');
+
+app.use('/api/stations', stationRoutes);
+
+
+
+
+
+
+
+
 // Test route
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Backend is running!', status: 'OK' });
@@ -34,6 +46,7 @@ const server = app.listen(PORT);
 server.on('listening', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Test: http://localhost:${PORT}/api/health`);
+  console.log(`Test: http://localhost:${PORT}/api/stations`);
 });
 
 server.on('error', (err) => {
