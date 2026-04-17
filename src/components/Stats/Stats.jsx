@@ -1,11 +1,9 @@
-import styles from "./Stats.module.css";
-
 function Stats() {
   return (
-    <section className={styles.stats}>
-      <div>
-        <h2>500+</h2>
-        <p>Vélos disponibles</p>
+    <section className="flex flex-wrap justify-center gap-8 bg-white px-10 py-16 text-center sm:px-16">
+      <div className="min-w-[170px]">
+        <h2 className="text-3xl font-bold text-emerald-500 mb-2">500+</h2>
+        <p className="text-sm text-slate-600">Vélos disponibles</p>
       </div>
 
       <div>

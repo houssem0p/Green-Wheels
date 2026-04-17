@@ -5,6 +5,7 @@ import Vehicules from "./pages/Vehicules";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
+import Stations from "./pages/Stations";
 function App() {
   return (
     <>
@@ -15,7 +16,8 @@ function App() {
         <Route path="/vehicules" element={<Vehicules />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/ForgotPassword" element={<ForgotPassword />} />
+ <Route path="/forgot-password" element={<ForgotPassword />} />
+         <Route path="/stations" element={<Stations />} />
       </Routes>
     </>
   );

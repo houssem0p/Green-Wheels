@@ -1,22 +1,20 @@
-import styles from "./VehicleCard.module.css";
-
 function VehicleCard({ title, price, image, available }) {
   return (
-    <div className={styles.card}>
-      <div className={styles.imageBox}>
-        <img src={image} alt={title} />
+    <div className="rounded-[1rem] overflow-hidden bg-white shadow-[0_10px_25px_rgba(0,0,0,0.05)]">
+      <div className="bg-slate-100 p-5 flex justify-center">
+        <img src={image} alt={title} className="h-40 object-contain" />
       </div>
 
-      <div className={styles.content}>
-        <h3>{title}</h3>
+      <div className="p-5 space-y-4">
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
 
-        <span className={available ? styles.available : styles.unavailable}>
+        <span className={`text-sm font-medium ${available ? "text-emerald-500" : "text-red-500"}`}>
           {available ? "Disponible" : "Indisponible"}
         </span>
 
-        <p className={styles.price}>{price} DA/h</p>
+        <p className="text-emerald-500 font-semibold">{price} DA/h</p>
 
-        <button>Détails</button>
+        <button className="w-full rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600">Détails</button>
       </div>
     </div>
   );
