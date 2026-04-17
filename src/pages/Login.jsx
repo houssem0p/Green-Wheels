@@ -17,7 +17,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#eef5f1] dark:bg-[#121212] flex flex-col items-center justify-center p-4 transition-colors duration-300">
+    <div className="min-h-screen bg-[#eef5f1] dark:bg-[#121212] flex flex-col items-center pt-32 pb-12 p-4 transition-colors duration-300">
       
       {/* HEADER */}
       <div className="text-center mb-6">
@@ -44,6 +44,13 @@ const Login = () => {
         onSubmit={handleLogin}
         className="bg-white dark:bg-gray-900 p-8 w-full max-w-[360px] rounded-2xl border-2 border-[#2ad367] flex flex-col gap-3 shadow-2xl animate-in slide-in-from-bottom-4 duration-500"
       >
+         <div className="mt-6 p-4 bg-red-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/30 rounded-xl">
+          <p className="text-[10px] uppercase tracking-wider font-bold text-red-600 dark:text-green-500 mb-1">Dev Mode / Backend Info</p>
+          <p className="text-xs text-red-700 dark:text-red-400 leading-relaxed">
+            Pour tester l'interface admin : <br/>
+            <span className="font-mono font-bold">admin@gmail.com</span> / <span className="font-mono font-bold">admin</span>
+          </p>
+        </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium dark:text-gray-300">Email</label>
           <input 

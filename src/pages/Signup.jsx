@@ -6,7 +6,7 @@ export default function Signup() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#eef5f1] dark:bg-[#121212] flex flex-col items-center justify-center p-4 transition-colors duration-300">
+    <div className="min-h-screen bg-[#eef5f1] dark:bg-[#121212] flex flex-col items-center pt-32 pb-12 p-4 transition-colors duration-300">
       <div className="text-center mb-6">
         <img src={Logo} alt="logo" className="w-[50px] mb-2 mx-auto animate-in fade-in zoom-in duration-700" />
         <h1 className="text-3xl font-bold mb-1 dark:text-white">Inscription</h1>
