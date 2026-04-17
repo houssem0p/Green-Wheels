@@ -1,10 +1,16 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx}"
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        brand: {
+          green: "#2ad367",
+        }
+      }
+    },
   },
   plugins: [],
-};
+}

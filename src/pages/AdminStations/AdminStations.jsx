@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import styles from './AdminStations.module.css';
-import { 
+import {
   EditIcon, TrashIcon, SearchIcon, PlusIcon, XIcon
 } from '../AdminDashboard/Icons';
 import AdminSidebar from '../../components/AdminSidebar/AdminSidebar';
@@ -23,8 +22,8 @@ const AdminStations = () => {
   const [toast, setToast] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredStations = stations.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredStations = stations.filter(s =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -43,7 +42,7 @@ const AdminStations = () => {
   const handleAddStation = (e) => {
     e.preventDefault();
     if (!newStation.name || !newStation.address) return;
-    
+
     const newId = `S00${stations.length + 1}`;
     setStations([...stations, {
       id: newId,
@@ -73,35 +72,49 @@ const AdminStations = () => {
 
   const renderStatusBadge = (status) => {
     if (status === 'Active') {
-      return <span className={`${styles.statusBadge} ${styles.bgGreen}`}>{status}</span>;
+      return (
+        <span className="inline-flex items-center justify-center p-[4px_16px] rounded-[20px] text-xs font-semibold bg-[#e8f8f0] text-[#2ad367]">
+          {status}
+        </span>
+      );
     }
-    return <span className={`${styles.statusBadge} ${styles.bgGray}`}>{status}</span>;
+    return (
+      <span className="inline-flex items-center justify-center p-[4px_16px] rounded-[20px] text-xs font-semibold bg-[#f5f5f5] text-[#888] dark:bg-[#2b2b2b] dark:text-[#aaa]">
+        {status}
+      </span>
+    );
   };
 
   return (
-    <div className={styles.adminContainer}>
+    <div className="flex min-h-screen font-sans bg-[#f7f9fc] text-[#333] dark:bg-[#121212] dark:text-[#e4e6eb]">
       <AdminSidebar activePage="stations" />
 
       {/* MAIN CONTENT */}
-      <main className={styles.mainContent} style={{ marginLeft: collapsed ? '72px' : '260px' }}>
-        <header className={styles.header}>
+      <main
+        className="flex-1 p-[32px_40px] max-w-[1400px] transition-[margin-left] duration-300 ease-in-out dark:bg-[#121212]"
+        style={{ marginLeft: collapsed ? '72px' : '260px' }}
+      >
+        <header className="flex justify-between items-start mb-8">
           <div>
-            <h1>Stations</h1>
-            <p>Gérez les stations de vélos.</p>
+            <h1 className="text-[28px] font-bold text-[#111] m-[0_0_8px_0] dark:text-[#e4e6eb]">Stations</h1>
+            <p className="text-[#666] m-0 text-[15px] dark:text-[#aaa]">Gérez les stations de vélos.</p>
           </div>
-          <button className={styles.addBtn} onClick={() => setIsModalOpen(true)}>
+          <button
+            className="bg-[#2ad367] text-white border-none p-[10px_20px] rounded-[20px] font-semibold text-sm flex items-center gap-2 cursor-pointer transition-colors hover:bg-[#24b557]"
+            onClick={() => setIsModalOpen(true)}
+          >
             <PlusIcon /> Ajouter une station
           </button>
         </header>
 
         {/* TOOLBAR */}
-        <section className={styles.toolbar}>
-          <div className={styles.searchBox}>
-            <SearchIcon />
-            <input 
-              type="text" 
-              placeholder="Rechercher une station ..." 
-              className={styles.searchInput} 
+        <section className="flex gap-4 mb-6">
+          <div className="flex-1 relative flex items-center">
+            <SearchIcon className="absolute left-4 text-[#999]" />
+            <input
+              type="text"
+              placeholder="Rechercher une station ..."
+              className="w-full p-[12px_16px_12px_48px] border border-[#eaeaea] rounded-[20px] text-sm outline-none transition-colors focus:border-[#2ad367] dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -109,33 +122,41 @@ const AdminStations = () => {
         </section>
 
         {/* TABLE */}
-        <section className={styles.tableContainer}>
-          <table className={styles.table}>
+        <section className="bg-white border border-[#eaeaea] rounded-xl overflow-hidden dark:bg-[#1a1a1a] dark:border-[#2b2b2b]">
+          <table className="w-full border-collapse text-left">
             <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Adresse</th>
-                <th>Vélos</th>
-                <th>Emplacements</th>
-                <th>Statut</th>
-                <th>Actions</th>
+              <tr className="border-b border-[#eaeaea] dark:border-[#2b2b2b]">
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">ID</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Nom</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Adresse</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Vélos</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Emplacements</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Statut</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredStations.map(s => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td className={styles.boldCell}>{s.name}</td>
-                  <td>{s.address}</td>
-                  <td className={styles.boldCell}>{s.velos}</td>
-                  <td>{s.emplacements}</td>
-                  <td>{renderStatusBadge(s.status)}</td>
-                  <td>
-                    <div className={styles.actionsBox}>
-                      <button className={styles.iconBtnTable} onClick={() => setEditStation({...s})}><EditIcon /></button>
-                      <button className={`${styles.iconBtnTable} ${styles.deleteIcon}`} onClick={() => handleDelete(s.id)}>
-                        <TrashIcon />
+                <tr key={s.id} className="border-b border-[#eaeaea] dark:border-[#2b2b2b]">
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{s.id}</td>
+                  <td className="p-[16px_20px] text-sm font-semibold text-[#333] dark:text-[#e4e6eb]">{s.name}</td>
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{s.address}</td>
+                  <td className="p-[16px_20px] text-sm font-semibold text-[#333] dark:text-[#e4e6eb]">{s.velos}</td>
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{s.emplacements}</td>
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{renderStatusBadge(s.status)}</td>
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">
+                    <div className="flex gap-2">
+                      <button
+                        className="bg-transparent border border-[#eaeaea] rounded-md w-8 h-8 flex items-center justify-center text-[#666] cursor-pointer transition-colors p-0 hover:bg-[#f5f5f5] hover:text-[#333] dark:border-[#333] dark:text-[#aaa] dark:hover:bg-[#2b2b2b] dark:hover:text-[#e4e6eb]"
+                        onClick={() => setEditStation({ ...s })}
+                      >
+                        <EditIcon className="w-4 h-4 !block" />
+                      </button>
+                      <button
+                        className="bg-transparent border border-[#eaeaea] rounded-md w-8 h-8 flex items-center justify-center text-[#666] cursor-pointer transition-colors p-0 hover:bg-[#fadbd8] hover:text-[#e74c3c] hover:border-[#fadbd8] dark:border-[#333] dark:text-[#aaa]"
+                        onClick={() => handleDelete(s.id)}
+                      >
+                        <TrashIcon className="w-4 h-4 !block" />
                       </button>
                     </div>
                   </td>
@@ -148,56 +169,74 @@ const AdminStations = () => {
 
       {/* MODAL AJOUTER */}
       {isModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>Ajouter une station</h2>
-              <button className={styles.closeBtn} onClick={() => setIsModalOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center">
+          <div className="bg-white w-[450px] rounded-2xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.15)] dark:bg-[#1a1a1a] dark:border-[#2b2b2b]">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold m-0 dark:text-[#e4e6eb]">Ajouter une station</h2>
+              <button className="bg-transparent border-none text-[#888] cursor-pointer flex" onClick={() => setIsModalOpen(false)}>
                 <XIcon />
               </button>
             </div>
-            
-            <form onSubmit={handleAddStation} className={styles.modalForm}>
-              <div className={styles.formGroup}>
-                <label>Nom</label>
-                <input 
-                  type="text" 
-                  placeholder="Nom de la station" 
-                  value={newStation.name} 
-                  onChange={(e) => setNewStation({...newStation, name: e.target.value})}
+
+            <form onSubmit={handleAddStation} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Nom</label>
+                <input
+                  type="text"
+                  placeholder="Nom de la station"
+                  className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                  value={newStation.name}
+                  onChange={(e) => setNewStation({ ...newStation, name: e.target.value })}
                   required
                 />
               </div>
 
-              <div className={styles.formGroup}>
-                <label>Adresse</label>
-                <input 
-                  type="text" 
-                  placeholder="Adresse" 
-                  value={newStation.address} 
-                  onChange={(e) => setNewStation({...newStation, address: e.target.value})}
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Adresse</label>
+                <input
+                  type="text"
+                  placeholder="Adresse"
+                  className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                  value={newStation.address}
+                  onChange={(e) => setNewStation({ ...newStation, address: e.target.value })}
                   required
                 />
               </div>
 
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Latitude</label>
-                  <input type="text" value={newStation.latitude} onChange={(e) => setNewStation({...newStation, latitude: e.target.value})} />
+              <div className="flex gap-4">
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Latitude</label>
+                  <input
+                    type="text"
+                    className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                    value={newStation.latitude}
+                    onChange={(e) => setNewStation({ ...newStation, latitude: e.target.value })}
+                  />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Longitude</label>
-                  <input type="text" value={newStation.longitude} onChange={(e) => setNewStation({...newStation, longitude: e.target.value})} />
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Longitude</label>
+                  <input
+                    type="text"
+                    className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                    value={newStation.longitude}
+                    onChange={(e) => setNewStation({ ...newStation, longitude: e.target.value })}
+                  />
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label>Emplacements</label>
-                <input type="number" placeholder="20" value={newStation.emplacements} onChange={(e) => setNewStation({...newStation, emplacements: e.target.value})} />
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Emplacements</label>
+                <input
+                  type="number"
+                  placeholder="20"
+                  className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                  value={newStation.emplacements}
+                  onChange={(e) => setNewStation({ ...newStation, emplacements: e.target.value })}
+                />
               </div>
 
-              <div className={styles.modalFooter}>
-                <button type="submit" className={styles.btnSubmitFull}>Ajouter la station</button>
+              <div className="mt-4">
+                <button type="submit" className="w-full p-[14px] bg-[#2ad367] border-none text-white rounded-lg font-semibold text-sm cursor-pointer transition-colors hover:bg-[#24b557]">Ajouter la station</button>
               </div>
             </form>
           </div>
@@ -206,42 +245,68 @@ const AdminStations = () => {
 
       {/* MODAL MODIFIER */}
       {editStation && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>Modifier la station</h2>
-              <button className={styles.closeBtn} onClick={() => setEditStation(null)}>
+        <div className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center">
+          <div className="bg-white w-[450px] rounded-2xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.15)] dark:bg-[#1a1a1a] dark:border-[#2b2b2b]">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold m-0 dark:text-[#e4e6eb]">Modifier la station</h2>
+              <button className="bg-transparent border-none text-[#888] cursor-pointer flex" onClick={() => setEditStation(null)}>
                 <XIcon />
               </button>
             </div>
-            <form onSubmit={handleSaveEdit} className={styles.modalForm}>
-              <div className={styles.formGroup}>
-                <label>Nom</label>
-                <input type="text" value={editStation.name} onChange={(e) => setEditStation({...editStation, name: e.target.value})} required />
+            <form onSubmit={handleSaveEdit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Nom</label>
+                <input
+                  type="text"
+                  className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                  value={editStation.name}
+                  onChange={(e) => setEditStation({ ...editStation, name: e.target.value })}
+                  required
+                />
               </div>
-              <div className={styles.formGroup}>
-                <label>Adresse</label>
-                <input type="text" value={editStation.address} onChange={(e) => setEditStation({...editStation, address: e.target.value})} required />
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Adresse</label>
+                <input
+                  type="text"
+                  className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                  value={editStation.address}
+                  onChange={(e) => setEditStation({ ...editStation, address: e.target.value })}
+                  required
+                />
               </div>
-              <div className={styles.formRow}>
-                <div className={styles.formGroup}>
-                  <label>Vélos</label>
-                  <input type="number" value={editStation.velos} onChange={(e) => setEditStation({...editStation, velos: Number(e.target.value)})} />
+              <div className="flex gap-4">
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Vélos</label>
+                  <input
+                    type="number"
+                    className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                    value={editStation.velos}
+                    onChange={(e) => setEditStation({ ...editStation, velos: Number(e.target.value) })}
+                  />
                 </div>
-                <div className={styles.formGroup}>
-                  <label>Emplacements</label>
-                  <input type="number" value={editStation.emplacements} onChange={(e) => setEditStation({...editStation, emplacements: Number(e.target.value)})} />
+                <div className="flex-1 flex flex-col gap-2">
+                  <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Emplacements</label>
+                  <input
+                    type="number"
+                    className="p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367]"
+                    value={editStation.emplacements}
+                    onChange={(e) => setEditStation({ ...editStation, emplacements: Number(e.target.value) })}
+                  />
                 </div>
               </div>
-              <div className={styles.formGroup}>
-                <label>Statut</label>
-                <select className={styles.statusSelect} value={editStation.status} onChange={(e) => setEditStation({...editStation, status: e.target.value})}>
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Statut</label>
+                <select
+                  className={`p-[12px_14px] border border-[#eaeaea] rounded-lg text-sm font-semibold outline-none dark:bg-[#1a1a1a] dark:border-[#333] cursor-pointer ${editStation.status === 'Active' ? 'bg-[#e8f8f0] text-[#2ad367]' : 'bg-[#f2f2f2] text-[#888]'}`}
+                  value={editStation.status}
+                  onChange={(e) => setEditStation({ ...editStation, status: e.target.value })}
+                >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
-              <div className={styles.modalFooter}>
-                <button type="submit" className={styles.btnSubmitFull}>Enregistrer les modifications</button>
+              <div className="mt-4">
+                <button type="submit" className="w-full p-[14px] bg-[#2ad367] border-none text-white rounded-lg font-semibold text-sm cursor-pointer transition-colors hover:bg-[#24b557]">Enregistrer les modifications</button>
               </div>
             </form>
           </div>
@@ -250,19 +315,19 @@ const AdminStations = () => {
 
       {/* TOAST NOTIFICATIONS */}
       {toast && (
-        <div className={`${styles.toast} ${toast.type === 'error' ? styles.toastError : styles.toastSuccess}`}>
+        <div className={`fixed right-6 z-[1000] animate-in fade-in slide-in-from-right duration-300 ${toast.type === 'error' ? 'bottom-6 left-1/2 -translate-x-1/2 right-auto ml-[130px]' : 'bottom-6'}`}>
           {toast.type === 'error' ? (
-            <div className={styles.toastContent}>
-               <span>{toast.text}</span>
-               <button onClick={() => setToast(null)}><XIcon /></button>
+            <div className="bg-[#e74c3c] text-white p-[12px_24px] rounded-lg flex items-center gap-4 font-medium text-sm">
+              <span>{toast.text}</span>
+              <button className="bg-transparent border-none text-white opacity-80 cursor-pointer flex hover:opacity-100" onClick={() => setToast(null)}><XIcon /></button>
             </div>
           ) : (
-            <div className={styles.toastContentWhite}>
-               <div className={styles.toastHeader}>
-                 <strong>Station ajoutée</strong>
-                 <button onClick={() => setToast(null)}><XIcon /></button>
-               </div>
-               <p>{toast.text}</p>
+            <div className="bg-white border border-[#eaeaea] rounded-lg p-[16px_20px] w-[300px] shadow-[0_4px_15px_rgba(0,0,0,0.05)] dark:bg-[#1a1a1a] dark:border-[#333]">
+              <div className="flex justify-between items-center mb-1">
+                <strong className="text-[15px] text-[#333] dark:text-[#e4e6eb]">Station ajoutée</strong>
+                <button className="bg-transparent border-none text-[#999] cursor-pointer flex p-0 h-[18px]" onClick={() => setToast(null)}><XIcon className="w-4 h-4" /></button>
+              </div>
+              <p className="m-0 text-[13px] text-[#666] dark:text-[#aaa]">{toast.text}</p>
             </div>
           )}
         </div>
