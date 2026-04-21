@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 10, 2026 at 05:22 PM
+-- Generation Time: Apr 21, 2026 at 09:01 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,8 +45,9 @@ CREATE TABLE `gps_logs` (
 CREATE TABLE `maintenance` (
   `id` int(11) NOT NULL,
   `vehicle_id` int(11) NOT NULL,
-  `description` varchar(170) NOT NULL,
+  `description` varchar(250) NOT NULL,
   `type` enum('repair','cleaning','battery','other') NOT NULL,
+  `priorite` enum('haute','urgent','base','terminée') NOT NULL,
   `status` enum('pending','in progress','completed') NOT NULL,
   `scheduled_date` date NOT NULL,
   `resolved_date` date NOT NULL
@@ -91,6 +92,18 @@ CREATE TABLE `rides` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `sessions`
+--
+
+CREATE TABLE `sessions` (
+  `session_id` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `expires` int(11) UNSIGNED NOT NULL,
+  `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `stations`
 --
 
@@ -101,8 +114,17 @@ CREATE TABLE `stations` (
   `latitude` decimal(10,2) NOT NULL,
   `longitude` decimal(10,2) NOT NULL,
   `total_slots` int(5) NOT NULL,
+  `available_slots` int(5) NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `stations`
+--
+
+INSERT INTO `stations` (`id`, `name`, `address`, `latitude`, `longitude`, `total_slots`, `available_slots`, `is_active`) VALUES
+(2, 'Station B', 'bab ezouar', 32.50, 2.06, 12, 0, 1),
+(3, 'Station C', 'rouiba', 10.50, 4.06, 13, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -132,10 +154,12 @@ CREATE TABLE `users` (
   `full_name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `phone` varchar(10) NOT NULL,
-  `password_hash` varchar(50) NOT NULL,
-  `role` enum('admin','user') NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `role` enum('admin','user') DEFAULT 'user',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `is_active` tinyint(1) NOT NULL
+  `is_active` tinyint(1) NOT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expires` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -171,6 +195,7 @@ ALTER TABLE `gps_logs`
 -- Indexes for table `maintenance`
 --
 ALTER TABLE `maintenance`
+  ADD PRIMARY KEY (`id`),
   ADD KEY `fk_maintenance` (`vehicle_id`);
 
 --
@@ -193,6 +218,12 @@ ALTER TABLE `rides`
   ADD KEY `fk_rides_end_station` (`end_station_id`);
 
 --
+-- Indexes for table `sessions`
+--
+ALTER TABLE `sessions`
+  ADD PRIMARY KEY (`session_id`);
+
+--
 -- Indexes for table `stations`
 --
 ALTER TABLE `stations`
@@ -209,7 +240,8 @@ ALTER TABLE `subscriptions`
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- Indexes for table `vehicles`
@@ -229,6 +261,12 @@ ALTER TABLE `gps_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `maintenance`
+--
+ALTER TABLE `maintenance`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
@@ -244,7 +282,7 @@ ALTER TABLE `rides`
 -- AUTO_INCREMENT for table `stations`
 --
 ALTER TABLE `stations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `subscriptions`
