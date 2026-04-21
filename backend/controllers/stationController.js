@@ -1,96 +1,135 @@
-const db = require('../config/db'); // MySQL connection
+const db = require('../config/db');
 
 // CREATE
-exports.createStation = (req, res) => {
-    const { name, address, latitude, longitude, total_slots, is_active } = req.body;
+exports.createStation = async (req, res) => {
+    try {
+        const { name, address, latitude, longitude, total_slots, is_active } = req.body;
 
-    // Validation
-    if (!name || !address) {
-        return res.status(400).json({ message: "Name and address are required" });
-    }
+        // Validation
+        if (!name || !address) {
+            return res.status(400).json({ message: "Name and address are required" });
+        }
 
-    if (total_slots <= 0) {
-        return res.status(400).json({ message: "Total slots must be > 0" });
-    }
+        if (total_slots <= 0) {
+            return res.status(400).json({ message: "Total slots must be > 0" });
+        }
 
-    const sql = `
-        INSERT INTO stations (name, address, latitude, longitude, total_slots, is_active)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `;
+        const sql = `
+            INSERT INTO stations (name, address, latitude, longitude, total_slots, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
 
-    db.query(sql, [name, address, latitude, longitude, total_slots, is_active], (err, result) => {
-        if (err) return res.status(500).json(err);
+        const [result] = await db.query(sql, [
+            name,
+            address,
+            latitude,
+            longitude,
+            total_slots,
+            is_active
+        ]);
 
         res.json({ message: "Station created successfully", id: result.insertId });
-    });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
+
 
 // READ ALL
-exports.getStations = (req, res) => {
-    db.query(
-        "SELECT * FROM stations WHERE is_active = true",
-        (err, results) => {
-            if (err) return res.status(500).json(err);
+exports.getStations = async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            "SELECT * FROM stations WHERE is_active = true"
+        );
 
-            res.json(results);
-        }
-    );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
+
 
 // READ ONE
-exports.getStationById = (req, res) => {
-    const { id } = req.params;
+exports.getStationById = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    db.query("SELECT * FROM stations WHERE id = ? AND is_active = true", [id], (err, results) => {
-        if (err) return res.status(500).json(err);
+        const [rows] = await db.query(
+            "SELECT * FROM stations WHERE id = ? AND is_active = true",
+            [id]
+        );
 
-        if (results.length === 0)
+        if (rows.length === 0) {
             return res.status(404).json({ message: "Station not found" });
+        }
 
-        res.json(results[0]);
-    });
+        res.json(rows[0]);
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
+
 
 // UPDATE
-exports.updateStation = (req, res) => {
-    const { id } = req.params;
-    const { name, address, latitude, longitude, total_slots, is_active } = req.body;
+exports.updateStation = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, address, latitude, longitude, total_slots, is_active } = req.body;
 
-    const sql = `
-        UPDATE stations 
-        SET name = ?, address = ?, latitude = ?, longitude = ?, total_slots = ?, is_active = ?
-        WHERE id = ?
-    `;
+        const sql = `
+            UPDATE stations 
+            SET name = ?, address = ?, latitude = ?, longitude = ?, total_slots = ?, is_active = ?
+            WHERE id = ?
+        `;
 
-    db.query(sql, [name, address, latitude, longitude, total_slots, is_active, id], (err) => {
-        if (err) return res.status(500).json(err);
+        await db.query(sql, [
+            name,
+            address,
+            latitude,
+            longitude,
+            total_slots,
+            is_active,
+            id
+        ]);
 
         res.json({ message: "Station updated successfully" });
-    });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
+
 
 // DELETE
-exports.deleteStation = (req, res) => {
-    const { id } = req.params;
+exports.deleteStation = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    db.query("DELETE FROM stations WHERE id = ?", [id], (err) => {
-        if (err) return res.status(500).json(err);
+        await db.query("DELETE FROM stations WHERE id = ?", [id]);
 
         res.json({ message: "Station deleted successfully" });
-    });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
 
+
 // DEACTIVATE (soft delete)
-exports.deactivateStation = (req, res) => {
-    const { id } = req.params;
+exports.deactivateStation = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    db.query(
-        "UPDATE stations SET is_active = false WHERE id = ?",
-        [id],
-        (err) => {
-            if (err) return res.status(500).json(err);
+        await db.query(
+            "UPDATE stations SET is_active = false WHERE id = ?",
+            [id]
+        );
 
-            res.json({ message: "Station deactivated" });
-        }
-    );
+        res.json({ message: "Station deactivated" });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
 };
