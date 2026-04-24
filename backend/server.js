@@ -9,29 +9,57 @@ const helmet = require('helmet');
 
 const db = require('./config/db');
 const User = require('./models/User');
+const Vehicle = require('./models/Vehicle');
 const errorHandler = require('./middleware/errorHandler');
 const { verifyMailTransport } = require('./config/mail');
 
 // ─── Route imports ────────────────────────────────────────────────────────────
 const authRoutes = require('./routes/auth');
-// const userRoutes    = require('./routes/users');
-// const rideRoutes    = require('./routes/rides');
-// const stationRoutes = require('./routes/stations');
-// const vehicleRoutes = require('./routes/vehicles');
-// const adminRoutes   = require('./routes/admin');
+const profileRoutes = require('./routes/profile');
+const vehicleRoutes = require('./routes/vehicles');
 
 const app = express();
 
-// ─── Security & parsing ───────────────────────────────────────────────────────
-app.use(helmet());
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true,           // Required for session cookies cross-origin
+
+const pricingRoutes = require('./routes/pricing');
+
+app.use('/api/pricing', pricingRoutes);
+
+
+// 1. SECURITY HEADERS
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
 }));
+
+// 2. CORS CONFIGURATION (Must be before routes)
+const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+const allowedOrigins = [clientUrl, 'http://localhost:5174', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS policy violation: origin ${origin} not allowed.`));
+  },
+  credentials: true, // Required for gw_session cookies
+}));
+
+// 3. BODY PARSING (Must be before routes)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Session store (MySQL) ────────────────────────────────────────────────────
+// 4. SESSION STORAGE (Must be before routes)
 const DB_PORT = Number(process.env.DB_PORT) || 3308;
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST || '127.0.0.1',
@@ -51,25 +79,35 @@ app.use(session({
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 7,
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
   },
 }));
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// 5. ROUTES (Must be after Session & CORS)
 app.use('/api/auth', authRoutes);
-// app.use('/api/users',    userRoutes);
-// app.use('/api/rides',    rideRoutes);
-// app.use('/api/stations', stationRoutes);
-// app.use('/api/vehicles', vehicleRoutes);
-// app.use('/api/admin',    adminRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/vehicles', vehicleRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-// ─── Global error handler ─────────────────────────────────────────────────────
+
+
+app.get('/api/test-mail', async (req, res) => {
+  const { getMailTransporter } = require('./config/mail');
+  const t = getMailTransporter();
+  if (!t) return res.json({ error: 'No transporter — check EMAIL_USER/EMAIL_PASS in .env' });
+  try {
+    await t.verify();
+    res.json({ ok: true, message: 'SMTP connection works!' });
+  } catch (err) {
+    res.json({ error: err.message, code: err.code });
+  }
+});
+// 6. GLOBAL ERROR HANDLER (Always last)
 app.use(errorHandler);
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
+// ─── Server Boot Logic ────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
 (async () => {
@@ -77,29 +115,30 @@ const PORT = process.env.PORT || 5000;
     // Test DB connection
     const conn = await db.getConnection();
     conn.release();
-    console.log(`✅  MySQL connected (port ${DB_PORT} · ${process.env.DB_NAME || 'greenwheels'})`);
+    console.log(`✅ MySQL connected (port ${DB_PORT} · ${process.env.DB_NAME || 'greenwheels'})`);
 
-    // Auto-create tables
+    // Auto-create tables (Migration)
     await User.migrate();
-    console.log('✅  Tables ready');
+    await Vehicle.migrate();
+    console.log('✅ Tables ready');
 
+    // Email verification
     if (process.env.EMAIL_SKIP_VERIFY !== 'true') {
       try {
         const v = await verifyMailTransport();
         if (v.skip) {
-          console.log('ℹ️  E-mail : SMTP non configuré (pas de EMAIL_USER/EMAIL_PASS).');
+          console.log('ℹ️ E-mail: SMTP non configuré.');
         } else {
-          console.log('✅  E-mail : connexion SMTP OK (Gmail / autre). Les reset par mail peuvent partir.');
+          console.log('✅ E-mail: connexion SMTP OK.');
         }
       } catch (smtpErr) {
-        console.error('❌  E-mail : échec de la connexion SMTP —', smtpErr.message);
-        console.error('    Vérifiez Gmail : mot de passe d’application (16 caractères), 2FA activée, pas de mot de passe Gmail normal.');
+        console.error('❌ E-mail: échec SMTP —', smtpErr.message);
       }
     }
 
-    app.listen(PORT, () => console.log(`🚀  Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (err) {
-    console.error('❌  Failed to start server:', err.message);
+    console.error('❌ Failed to start server:', err.message);
     process.exit(1);
   }
 })();
