@@ -1,0 +1,55 @@
+import { Routes, Route, useLocation } from "react-router-dom";
+import Navbar from "./components/layout/Navbar";
+import Home from "./pages/Home";
+import Vehicules from "./pages/Vehicules";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import AdminDashboard from "./pages/AdminDashboard/AdminDashboard";
+import AdminVehicules from "./pages/AdminVehicules/AdminVehicules";
+import AdminStations from "./pages/AdminStations/AdminStations";
+import AdminUtilisateurs from "./pages/AdminUtilisateurs/AdminUtilisateurs";
+import AdminReservations from "./pages/AdminReservations/AdminReservations";
+import AdminPayments from "./pages/AdminPayments/AdminPayments";
+import AdminMaintenance from "./pages/AdminMaintenance/AdminMaintenance";
+import Station from "./pages/Stations";
+import Abonnements from "./pages/Abonnements";
+import Apropos from "./pages/Apropos";
+import FAQ from "./pages/FAQ";
+import Contact from "./pages/Contacts";
+import VehicleDetails from "./pages/VehicleDetails";
+
+  
+function App() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
+
+  return (
+    <>
+      {!isAdmin && <Navbar />} 
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/vehicules" element={<Vehicules />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/vehicules" element={<AdminVehicules />} />
+        <Route path="/admin/stations" element={<AdminStations />} />
+        <Route path="/admin/utilisateurs" element={<AdminUtilisateurs />} />
+        <Route path="/admin/reservations" element={<AdminReservations />} />
+        <Route path="/admin/paiements" element={<AdminPayments />} />
+        <Route path="/admin/maintenance" element={<AdminMaintenance />} />
+        <Route path="/stations" element={<Station />} />
+        <Route path="/abonnements" element={<Abonnements />} />
+        <Route path="/a-propos" element={<Apropos />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/contacts" element={<Contact />} />
+        <Route path="/vehicules/:id" element={<VehicleDetails />} />
+      </Routes>
+    </>
+  );
+}
+
+export default App;
