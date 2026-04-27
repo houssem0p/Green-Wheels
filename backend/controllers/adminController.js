@@ -140,3 +140,229 @@ exports.deleteMaintenance = async (req, res) => {
         res.status(500).json(err);
     }
 };
+
+
+// ===============================
+// VEHICLE CRUD
+// ===============================
+
+
+// 1. Get all vehicles
+exports.getAllVehicles = async (req, res) => {
+    try {
+        const query = `
+            SELECT v.*, s.name AS station_name
+            FROM vehicles v
+            JOIN stations s ON v.station_id = s.id
+            ORDER BY v.id DESC
+        `;
+
+        const [rows] = await db.query(query);
+        res.json(rows);
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// 2. Create vehicle
+exports.createVehicle = async (req, res) => {
+    try {
+        const {
+            code,
+            type,
+            price_hour,
+            autonomy,
+            station_id,
+            bettery_level,
+            status,
+            latitude,
+            longitude
+        } = req.body;
+
+        if (
+            !code ||
+            !type ||
+            !price_hour ||
+            !autonomy ||
+            !station_id ||
+            !bettery_level ||
+            !status
+        ) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        const query = `
+            INSERT INTO vehicles 
+            (code, type, price_hour, autonomy, station_id, bettery_level, status, latitude, longitude)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const [result] = await db.query(query, [
+            code,
+            type,
+            price_hour,
+            autonomy,
+            station_id,
+            bettery_level,
+            status,
+            latitude || 0,
+            longitude || 0
+        ]);
+
+        res.json({
+            message: "Vehicle created successfully",
+            id: result.insertId
+        });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// 3. Update vehicle
+exports.updateVehicle = async (req, res) => {
+    try {
+        const vehicleId = req.params.id;
+
+        const {
+            code,
+            type,
+            price_hour,
+            autonomy,
+            station_id,
+            bettery_level,
+            status,
+            latitude,
+            longitude
+        } = req.body;
+
+        const query = `
+            UPDATE vehicles SET
+                code = ?,
+                type = ?,
+                price_hour = ?,
+                autonomy = ?,
+                station_id = ?,
+                bettery_level = ?,
+                status = ?,
+                latitude = ?,
+                longitude = ?
+            WHERE id = ?
+        `;
+
+        await db.query(query, [
+            code,
+            type,
+            price_hour,
+            autonomy,
+            station_id,
+            bettery_level,
+            status,
+            latitude,
+            longitude,
+            vehicleId
+        ]);
+
+        res.json({ message: "Vehicle updated successfully" });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// 4. Delete vehicle
+exports.deleteVehicle = async (req, res) => {
+    try {
+        const vehicleId = req.params.id;
+
+        const query = "DELETE FROM vehicles WHERE id = ?";
+        await db.query(query, [vehicleId]);
+
+        res.json({ message: "Vehicle deleted successfully" });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// ===============================
+// RESERVATIONS CRUD
+// ===============================
+
+// 1. Get all reservations
+exports.getAllReservations = async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                r.*,
+                u.full_name AS user_name,
+                v.code AS vehicle_name,
+                s.name AS station_name
+            FROM reservations r
+            JOIN users u ON r.user_id = u.id
+            JOIN vehicles v ON r.vehicle_id = v.id
+            JOIN stations s ON r.station_id = s.id
+            ORDER BY r.id DESC
+        `;
+
+        const [rows] = await db.query(query);
+        res.json(rows);
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// 2. Cancel reservation
+exports.cancelReservation = async (req, res) => {
+    try {
+        const reservationId = req.params.id;
+
+        const query = `
+            UPDATE reservations 
+            SET status = 'cancelled'
+            WHERE id = ?
+        `;
+
+        await db.query(query, [reservationId]);
+
+        res.json({ message: "Reservation cancelled" });
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+
+// 3. Get reservation details (for modal)
+exports.getReservationById = async (req, res) => {
+    try {
+        const reservationId = req.params.id;
+
+        const query = `
+            SELECT 
+                r.*,
+                u.full_name AS user_name,
+                v.code AS vehicle_name,
+                s.name AS station_name
+            FROM reservations r
+            JOIN users u ON r.user_id = u.id
+            JOIN vehicles v ON r.vehicle_id = v.id
+            JOIN stations s ON r.station_id = s.id
+            WHERE r.id = ?
+        `;
+
+        const [rows] = await db.query(query, [reservationId]);
+
+        res.json(rows[0]);
+
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};

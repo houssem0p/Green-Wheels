@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 21, 2026 at 09:01 PM
+-- Generation Time: Apr 27, 2026 at 10:17 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,21 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `greenwheels`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `gps_logs`
---
-
-CREATE TABLE `gps_logs` (
-  `id` int(11) NOT NULL,
-  `vehicle_id` int(11) NOT NULL,
-  `latitude` decimal(10,2) NOT NULL,
-  `longitude` decimal(10,2) NOT NULL,
-  `bettery_level` int(11) NOT NULL,
-  `recorded_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -68,6 +53,25 @@ CREATE TABLE `payments` (
   `method` enum('card','cash') NOT NULL,
   `status` enum('pending','completed','failed','cancelled') NOT NULL,
   `paid_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `reservations`
+--
+
+CREATE TABLE `reservations` (
+  `id` int(11) NOT NULL,
+  `code` varchar(20) DEFAULT NULL,
+  `user_id` int(11) NOT NULL,
+  `vehicle_id` int(11) NOT NULL,
+  `station_id` int(11) NOT NULL,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime NOT NULL,
+  `total_price` decimal(10,2) DEFAULT 0.00,
+  `status` enum('pending','in_progress','completed','cancelled') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -172,6 +176,8 @@ CREATE TABLE `vehicles` (
   `id` int(11) NOT NULL,
   `code` varchar(50) NOT NULL,
   `type` enum('scooter','bicycle','electric bicycle') NOT NULL,
+  `price_hour` decimal(10,2) NOT NULL,
+  `autonomy` decimal(10,2) NOT NULL,
   `station_id` int(11) NOT NULL,
   `bettery_level` int(11) NOT NULL,
   `status` enum('available','reserved','Under Maintenance') NOT NULL,
@@ -183,13 +189,6 @@ CREATE TABLE `vehicles` (
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `gps_logs`
---
-ALTER TABLE `gps_logs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_vehicle` (`vehicle_id`);
 
 --
 -- Indexes for table `maintenance`
@@ -208,14 +207,19 @@ ALTER TABLE `payments`
   ADD KEY `fk_payments_subscription` (`subscription_id`);
 
 --
+-- Indexes for table `reservations`
+--
+ALTER TABLE `reservations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `vehicle_id` (`vehicle_id`),
+  ADD KEY `station_id` (`station_id`);
+
+--
 -- Indexes for table `rides`
 --
 ALTER TABLE `rides`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_rides_user` (`user_id`),
-  ADD KEY `fk_rides_vehicle` (`vehicle_id`),
-  ADD KEY `fk_rides_start_station` (`start_station_id`),
-  ADD KEY `fk_rides_end_station` (`end_station_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `sessions`
@@ -255,12 +259,6 @@ ALTER TABLE `vehicles`
 --
 
 --
--- AUTO_INCREMENT for table `gps_logs`
---
-ALTER TABLE `gps_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `maintenance`
 --
 ALTER TABLE `maintenance`
@@ -270,6 +268,12 @@ ALTER TABLE `maintenance`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `reservations`
+--
+ALTER TABLE `reservations`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -307,12 +311,6 @@ ALTER TABLE `vehicles`
 --
 
 --
--- Constraints for table `gps_logs`
---
-ALTER TABLE `gps_logs`
-  ADD CONSTRAINT `fk_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `maintenance`
 --
 ALTER TABLE `maintenance`
@@ -325,6 +323,14 @@ ALTER TABLE `payments`
   ADD CONSTRAINT `fk_payments_ride` FOREIGN KEY (`ride_id`) REFERENCES `rides` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_payments_subscription` FOREIGN KEY (`subscription_id`) REFERENCES `subscriptions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_payments_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `reservations`
+--
+ALTER TABLE `reservations`
+  ADD CONSTRAINT `reservations_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `reservations_ibfk_2` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`),
+  ADD CONSTRAINT `reservations_ibfk_3` FOREIGN KEY (`station_id`) REFERENCES `stations` (`id`);
 
 --
 -- Constraints for table `rides`

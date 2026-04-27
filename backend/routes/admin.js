@@ -32,4 +32,36 @@ router.post("/maintenance", isAuthenticated, isAdmin, adminController.createMain
 // Delete maintenance
 router.delete( "/maintenance/:id", isAuthenticated, isAdmin, adminController.deleteMaintenance);
 
+
+// ===============================
+// VEHICLE ROUTES
+// ===============================
+
+// Get all vehicles
+router.get("/vehicles", isAuthenticated, isAdmin, adminController.getAllVehicles);
+
+// Create vehicle
+router.post("/vehicles", isAuthenticated, isAdmin, adminController.createVehicle);
+
+// Update vehicle
+router.put("/vehicles/:id", isAuthenticated, isAdmin, adminController.updateVehicle);
+
+// Delete vehicle
+router.delete("/vehicles/:id", isAuthenticated, isAdmin, adminController.deleteVehicle);
+
+
+// ===============================
+// RESERVATIONS ROUTES
+// ===============================
+
+// Get all reservations
+router.get("/reservations", isAuthenticated, isAdmin, adminController.getAllReservations);
+
+// Get details
+router.get("/reservations/:id", isAuthenticated, isAdmin, adminController.getReservationById);
+
+// Cancel reservation
+router.patch("/reservations/:id/cancel", isAuthenticated, isAdmin, adminController.cancelReservation);
+
+
 module.exports = router;
