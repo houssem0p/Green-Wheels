@@ -33,7 +33,7 @@ const AdminVehicules = () => {
   });
 
   const [newVehicle, setNewVehicle] = useState({
-    name: '', type: 'Vélo électrique', price: '', autonomy: '', station: 'Alger Centre'
+    name: '', type: 'Vélo électrique', price: '', autonomy: '', station: 'Alger Centre', image: null
   });
 
   // Auto-hide toast after 3s
@@ -57,8 +57,8 @@ const AdminVehicules = () => {
     }]);
 
     setIsModalOpen(false);
-    setNewVehicle({ name: '', type: 'Vélo électrique', price: '', autonomy: '', station: 'Alger Centre' });
-    setToast({ type: 'success', text: 'Nom du Véhicule a été ajouté à la flotte' });
+    setNewVehicle({ name: '', type: 'Vélo électrique', price: '', autonomy: '', station: 'Alger Centre', image: null });
+    setToast({ type: 'success', text: 'Le Véhicule a été ajouté à la flotte' });
   };
 
   const handleDelete = (id) => {
@@ -205,6 +205,7 @@ const AdminVehicules = () => {
             <thead>
               <tr className="border-b border-[#eaeaea] dark:border-[#2b2b2b]">
                 <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">ID</th>
+                <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Photo</th>
                 <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Nom</th>
                 <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Type</th>
                 <th className="p-[16px_20px] text-[13px] font-medium text-[#888]">Prix/h</th>
@@ -219,6 +220,17 @@ const AdminVehicules = () => {
               {filteredVehicles.map(v => (
                 <tr key={v.id} className="border-b border-[#eaeaea] dark:border-[#2b2b2b]">
                   <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{v.id}</td>
+                  <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">
+                    {v.image ? (
+                      <div className="w-10 h-10 rounded-md bg-gray-200 overflow-hidden flex items-center justify-center shadow-sm">
+                        <img src={v.image instanceof File ? URL.createObjectURL(v.image) : v.image} alt={v.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-md bg-gray-100 flex items-center justify-center text-gray-400 dark:bg-[#2b2b2b]">
+                        <BikeIcon className="w-5 h-5" />
+                      </div>
+                    )}
+                  </td>
                   <td className="p-[16px_20px] text-sm font-semibold text-[#333] dark:text-[#e4e6eb]">{v.name}</td>
                   <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{v.type}</td>
                   <td className="p-[16px_20px] text-sm text-[#555] dark:text-[#aaa]">{v.price} DA</td>
@@ -319,6 +331,16 @@ const AdminVehicules = () => {
                     onChange={(e) => setNewVehicle({...newVehicle, autonomy: e.target.value})} 
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Photo du véhicule</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className="p-[10px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#e8f8f0] file:text-[#2ad367] hover:file:bg-[#d1f0df] dark:file:bg-[#2b2b2b] dark:file:text-[#2ad367] cursor-pointer"
+                  onChange={(e) => setNewVehicle({...newVehicle, image: e.target.files[0]})}
+                />
               </div>
 
               <div className="flex flex-col gap-2">
@@ -440,6 +462,21 @@ const AdminVehicules = () => {
                   </div>
                 </div>
               </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Photo du véhicule</label>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  className="p-[10px_14px] border border-[#eaeaea] rounded-lg text-sm outline-none font-inherit dark:bg-[#1a1a1a] dark:border-[#333] dark:text-[#e4e6eb] focus:border-[#2ad367] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#e8f8f0] file:text-[#2ad367] hover:file:bg-[#d1f0df] dark:file:bg-[#2b2b2b] dark:file:text-[#2ad367] cursor-pointer"
+                  onChange={(e) => setEditVehicle({...editVehicle, image: e.target.files[0]})}
+                />
+                {editVehicle.image && (
+                  <p className="text-xs text-[#888] m-0 mt-1">
+                    Image actuelle : {editVehicle.image instanceof File ? editVehicle.image.name : 'Image enregistrée'}
+                  </p>
+                )}
+              </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-[13px] font-medium text-[#555] dark:text-[#aaa]">Statut</label>
                 <div className="relative flex items-center">
