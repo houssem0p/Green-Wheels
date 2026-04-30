@@ -18,6 +18,8 @@ import Apropos from "./pages/Apropos";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contacts";
 import VehicleDetails from "./pages/VehicleDetails";
+import Payment from "./pages/Payment";  // ADD THIS
+import PaymentSuccess from "./pages/PaymentSuccess";  // ADD THIS
 
   
 function App() {
@@ -47,6 +49,8 @@ function App() {
         <Route path="/faq" element={<FAQ />} />
         <Route path="/contacts" element={<Contact />} />
         <Route path="/vehicules/:id" element={<VehicleDetails />} />
+        <Route path="/payment" element={<Payment />} />  {/* ADD THIS */}
+        <Route path="/payment-success" element={<PaymentSuccess />} />  {/* ADD THIS */}
       </Routes>
     </>
   );

@@ -1,7 +1,11 @@
+import { useNavigate } from "react-router-dom";
+
 const plans = [
   {
+    id: 1,
     title: "Horaire",
-    price: "200 DA",
+    price: "200",
+    price_display: "200 DA",
     period: "/heure",
     description: "Idéal pour les courts trajets",
     features: [
@@ -12,8 +16,10 @@ const plans = [
     ],
   },
   {
+    id: 2,
     title: "Journalier",
-    price: "750 DA",
+    price: "750",
+    price_display: "750 DA",
     period: "/jour",
     description: "Parfait pour une journée d'exploration",
     popular: true,
@@ -26,8 +32,10 @@ const plans = [
     ],
   },
   {
+    id: 3,
     title: "Mensuel",
-    price: "5 000 DA",
+    price: "5000",
+    price_display: "5 000 DA",
     period: "/mois",
     description: "Pour les trajets quotidiens",
     features: [
@@ -40,8 +48,10 @@ const plans = [
     ],
   },
   {
+    id: 4,
     title: "Annuel",
-    price: "40 000 DA",
+    price: "40000",
+    price_display: "40 000 DA",
     period: "/an",
     description: "L'offre la plus avantageuse",
     features: [
@@ -57,6 +67,13 @@ const plans = [
 ];
 
 export default function Abonnements() {
+  const navigate = useNavigate();
+
+  const handleChoosePlan = (plan) => {
+    // Navigate to payment page with plan data
+    navigate("/payment", { state: { plan } });
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 px-6 py-12">
       
@@ -97,7 +114,7 @@ export default function Abonnements() {
 
             {/* PRICE */}
             <p className="text-center text-2xl font-bold text-emerald-500 mt-4">
-              {plan.price}
+              {plan.price_display}
               <span className="text-sm text-slate-400">
                 {plan.period}
               </span>
@@ -115,6 +132,7 @@ export default function Abonnements() {
 
             {/* BUTTON */}
             <button
+              onClick={() => handleChoosePlan(plan)}
               className={`mt-8 w-full rounded-xl py-3 font-medium transition 
               ${
                 plan.popular
