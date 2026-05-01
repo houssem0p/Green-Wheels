@@ -1,5 +1,6 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Vehicules from "./pages/Vehicules";
 import Login from "./pages/Login";
@@ -24,7 +25,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";  // ADD THIS
   
 function App() {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith("/admin");
+  const isAdmin = location.pathname.startsWith("/admin-");
 
   return (
     <>
@@ -36,13 +37,13 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/vehicules" element={<AdminVehicules />} />
-        <Route path="/admin/stations" element={<AdminStations />} />
-        <Route path="/admin/utilisateurs" element={<AdminUtilisateurs />} />
-        <Route path="/admin/reservations" element={<AdminReservations />} />
-        <Route path="/admin/paiements" element={<AdminPayments />} />
-        <Route path="/admin/maintenance" element={<AdminMaintenance />} />
+        <Route path="/admin-dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin-vehicules" element={<ProtectedRoute requiredRole="admin"><AdminVehicules /></ProtectedRoute>} />
+        <Route path="/admin-stations" element={<ProtectedRoute requiredRole="admin"><AdminStations /></ProtectedRoute>} />
+        <Route path="/admin-utilisateurs" element={<ProtectedRoute requiredRole="admin"><AdminUtilisateurs /></ProtectedRoute>} />
+        <Route path="/admin-reservations" element={<ProtectedRoute requiredRole="admin"><AdminReservations /></ProtectedRoute>} />
+        <Route path="/admin-paiements" element={<ProtectedRoute requiredRole="admin"><AdminPayments /></ProtectedRoute>} />
+        <Route path="/admin-maintenance" element={<ProtectedRoute requiredRole="admin"><AdminMaintenance /></ProtectedRoute>} />
         <Route path="/stations" element={<Station />} />
         <Route path="/abonnements" element={<Abonnements />} />
         <Route path="/a-propos" element={<Apropos />} />

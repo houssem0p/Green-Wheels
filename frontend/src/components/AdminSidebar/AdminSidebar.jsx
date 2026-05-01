@@ -13,13 +13,13 @@ const AdminSidebar = ({ activePage }) => {
   const [collapsed, toggleSidebar] = useSidebar();
 
   const navItems = [
-    { to: '/admin', icon: <DashboardIcon />, label: 'Dashboard', key: 'dashboard' },
-    { to: '/admin/vehicules', icon: <BikeIcon />, label: 'Véhicules', key: 'vehicules' },
-    { to: '/admin/stations', icon: <MapPinIcon />, label: 'Stations', key: 'stations' },
-    { to: '/admin/utilisateurs', icon: <UsersIcon />, label: 'Utilisateurs', key: 'utilisateurs' },
-    { to: '/admin/reservations', icon: <CalendarIcon />, label: 'Réservations', key: 'reservations' },
-    { to: '/admin/paiements', icon: <CreditCardIcon />, label: 'Paiements', key: 'paiements' },
-    { to: '/admin/maintenance', icon: <SettingsIcon />, label: 'Maintenance', key: 'maintenance' },
+    { to: '/admin-dashboard', icon: <DashboardIcon />, label: 'Dashboard', key: 'dashboard' },
+    { to: '/admin-vehicules', icon: <BikeIcon />, label: 'Véhicules', key: 'vehicules' },
+    { to: '/admin-stations', icon: <MapPinIcon />, label: 'Stations', key: 'stations' },
+    { to: '/admin-utilisateurs', icon: <UsersIcon />, label: 'Utilisateurs', key: 'utilisateurs' },
+    { to: '/admin-reservations', icon: <CalendarIcon />, label: 'Réservations', key: 'reservations' },
+    { to: '/admin-paiements', icon: <CreditCardIcon />, label: 'Paiements', key: 'paiements' },
+    { to: '/admin-maintenance', icon: <SettingsIcon />, label: 'Maintenance', key: 'maintenance' },
   ];
 
   return (

@@ -61,7 +61,14 @@ export default function Signup() {
         phone: formData.phone,
         password: formData.password,
       });
-      navigate("/abonnements");
+      
+      // Get updated user from localStorage to check role
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (userData?.role === 'admin') {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/abonnements");
+      }
     } catch (err) {
       setLocalError(err.message);
     }

@@ -40,7 +40,12 @@ const Login = () => {
       const testData = await testResponse.json();
       console.log("Session check:", testData);
       
-      navigate("/abonnements");
+      // Role-based redirect
+      if (data.user.role === 'admin') {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/abonnements");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
