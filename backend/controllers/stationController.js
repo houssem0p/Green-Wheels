@@ -40,7 +40,7 @@ exports.createStation = async (req, res) => {
 exports.getStations = async (req, res) => {
     try {
         const [rows] = await db.query(
-            "SELECT * FROM stations WHERE is_active = true"
+            "SELECT * FROM stations"
         );
 
         res.json(rows);
@@ -56,7 +56,7 @@ exports.getStationById = async (req, res) => {
         const { id } = req.params;
 
         const [rows] = await db.query(
-            "SELECT * FROM stations WHERE id = ? AND is_active = true",
+            "SELECT * FROM stations WHERE id = ?",
             [id]
         );
 
@@ -123,7 +123,7 @@ exports.deactivateStation = async (req, res) => {
         const { id } = req.params;
 
         await db.query(
-            "UPDATE stations SET is_active = false WHERE id = ?",
+            "UPDATE stations SET is_active = NOT is_active  WHERE id = ?",
             [id]
         );
 

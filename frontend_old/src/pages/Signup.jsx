@@ -64,7 +64,7 @@ export default function Signup() {
       
       // Get updated user from localStorage to check role
       const userData = JSON.parse(localStorage.getItem("user"));
-      if (userData?.role === 'admin') {
+      if (userData.role === 'admin') {
         navigate("/admin-dashboard");
       } else {
         navigate("/abonnements");
