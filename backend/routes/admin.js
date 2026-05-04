@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const upload = require("../middleware/upload");
 
 const adminController = require("../controllers/adminController");
 const { isAuthenticated, isAdmin } = require("../middleware/auth");
@@ -32,6 +33,9 @@ router.post("/maintenance", isAuthenticated, isAdmin, adminController.createMain
 // Delete maintenance
 router.delete( "/maintenance/:id", isAuthenticated, isAdmin, adminController.deleteMaintenance);
 
+// Update maintenance status
+router.patch("/maintenance/:id/status",isAuthenticated, isAdmin, adminController.updateMaintenanceStatus);
+
 
 // ===============================
 // VEHICLE ROUTES
@@ -41,7 +45,7 @@ router.delete( "/maintenance/:id", isAuthenticated, isAdmin, adminController.del
 router.get("/vehicles", isAuthenticated, isAdmin, adminController.getAllVehicles);
 
 // Create vehicle
-router.post("/vehicles", isAuthenticated, isAdmin, adminController.createVehicle);
+router.post("/vehicles", isAuthenticated, isAdmin, upload.single("image"), adminController.createVehicle);
 
 // Update vehicle
 router.put("/vehicles/:id", isAuthenticated, isAdmin, adminController.updateVehicle);

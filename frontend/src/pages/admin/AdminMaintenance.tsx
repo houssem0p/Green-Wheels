@@ -9,17 +9,24 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wrench, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
+import { Trash2 } from "lucide-react";
+import { getMaintenance, createMaintenance, deleteMaintenance, updateMaintenanceStatus } from "@/api/adminMaintenance";
+import { getVehicles } from "@/api/adminVehicles";
 
-type Maintenance = Tables<"maintenance">;
-type Vehicle = Tables<"vehicles">;
+type Maintenance = any;
+type Vehicle = any;
 
-const priorityLabels: Record<string, string> = { low: "Basse", medium: "Moyenne", high: "Haute", urgent: "Urgente" };
-const priorityColors: Record<string, string> = { low: "bg-muted text-muted-foreground", medium: "bg-accent text-accent-foreground", high: "bg-destructive/10 text-destructive", urgent: "bg-destructive text-destructive-foreground" };
+const priorityLabels: Record<string, string> = { basse: "Basse", moyenne: "Moyenne", haute: "Haute", urgente: "Urgente" };
+const priorityColors: Record<string, string> = { basse: "bg-muted text-muted-foreground", moyenne: "bg-accent text-accent-foreground", haute: "bg-destructive/10 text-destructive", urgente: "bg-destructive text-destructive-foreground" };
 const statusLabels: Record<string, string> = { pending: "En attente", in_progress: "En cours", completed: "Terminée" };
 const statusColors: Record<string, string> = { pending: "bg-accent text-accent-foreground", in_progress: "bg-primary/10 text-primary", completed: "bg-muted text-muted-foreground" };
+const maintenanceTypeLabels: Record<string, string> = {
+  repair: "Réparation",
+  cleaning: "Nettoyage",
+  battery: "Batterie",
+  other: "Autre"
+};
 
 export default function AdminMaintenance() {
   const [tasks, setTasks] = useState<(Maintenance & { vehicle_name?: string })[]>([]);
@@ -32,53 +39,112 @@ export default function AdminMaintenance() {
   const [vehicleId, setVehicleId] = useState("");
   const [type, setType] = useState("repair");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<string>("medium");
+  const [priority, setPriority] = useState<string>("moyenne");
   const [scheduledDate, setScheduledDate] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
-    const [{ data: mData }, { data: vData }] = await Promise.all([
-      supabase.from("maintenance").select("*").order("created_at", { ascending: false }),
-      supabase.from("vehicles").select("*"),
-    ]);
-    const vehicleMap = new Map((vData || []).map((v) => [v.id, v.name]));
-    setTasks((mData || []).map((m) => ({ ...m, vehicle_name: vehicleMap.get(m.vehicle_id) || "Inconnu" })));
-    setVehicles(vData || []);
+
+    try {
+      const data = await getMaintenance();
+
+      const mapped = data.map((m: any) => ({
+        ...m,
+        vehicle_name: m.vehicle_type || "Inconnu"
+      }));
+
+      setTasks(mapped);
+    } catch (err) {
+      toast.error("Erreur lors du chargement");
+    }
+
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, []);
-
-  const handleSubmit = async () => {
-    if (!vehicleId) { toast.error("Veuillez sélectionner un véhicule"); return; }
-    setSubmitting(true);
-    const { error } = await supabase.from("maintenance").insert({
-      vehicle_id: vehicleId,
-      type,
-      description: description || null,
-      priority: priority as any,
-      scheduled_date: scheduledDate || null,
-    });
-    setSubmitting(false);
-    if (error) { toast.error("Erreur: " + error.message); return; }
-    toast.success("Tâche de maintenance créée !");
-    setOpen(false);
-    setVehicleId(""); setDescription(""); setPriority("medium"); setScheduledDate(""); setType("repair");
+  useEffect(() => {
     fetchData();
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      const data = await getVehicles();
+
+      setVehicles(
+        data.map((v: any) => ({
+          id: String(v.id),
+          name: v.code,
+          type: v.type
+        }))
+      );
+    } catch (err) {
+      toast.error("Erreur chargement véhicules");
+    }
   };
 
   const handleStatusChange = async (taskId: string, status: string) => {
     setUpdatingStatusId(taskId);
-    const { error } = await supabase.from("maintenance").update({ status: status as any }).eq("id", taskId);
-    setUpdatingStatusId(null);
 
-    if (error) {
-      toast.error("Impossible de changer le statut: " + error.message);
+    try {
+      await updateMaintenanceStatus(taskId, status);
+
+      setTasks((current) =>
+        current.map((task) =>
+          task.id === taskId ? { ...task, status } : task
+        )
+      );
+
+      toast.success("Statut mis à jour");
+    } catch (err: any) {
+      toast.error("Impossible de changer le statut");
+    }
+
+    setUpdatingStatusId(null);
+  };
+
+  const handleSubmit = async () => {
+
+    if (!vehicleId) {
+      toast.error("Veuillez sélectionner un véhicule");
       return;
     }
 
-    setTasks((currentTasks) => currentTasks.map((task) => (task.id === taskId ? { ...task, status } : task)));
-    toast.success("Statut mis à jour");
+    setSubmitting(true);
+
+    try {
+      await createMaintenance({
+        vehicle_id: vehicleId,
+        type,
+        description: description || null,
+        priorite: priority,
+        status: "pending",
+        scheduled_date: scheduledDate || null,
+      });
+
+      toast.success("Tâche créée !");
+      setOpen(false);
+
+      setVehicleId("");
+      setDescription("");
+      setPriority("moyenne");
+      setScheduledDate("");
+
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+
+    setSubmitting(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMaintenance(id);
+      setTasks(tasks.filter(t => t.id !== id));
+      toast.success("Supprimé");
+    } catch (err) {
+      toast.error("Erreur suppression");
+    }
   };
 
   return (
@@ -114,8 +180,9 @@ export default function AdminMaintenance() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="repair">Réparation</SelectItem>
-                    <SelectItem value="inspection">Inspection</SelectItem>
                     <SelectItem value="cleaning">Nettoyage</SelectItem>
+                    <SelectItem value="battery">Batterie</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -124,10 +191,10 @@ export default function AdminMaintenance() {
                 <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Basse</SelectItem>
-                    <SelectItem value="medium">Moyenne</SelectItem>
-                    <SelectItem value="high">Haute</SelectItem>
-                    <SelectItem value="urgent">Urgente</SelectItem>
+                    <SelectItem value="basse">Basse</SelectItem>
+                    <SelectItem value="moyenne">Moyenne</SelectItem>
+                    <SelectItem value="haute">Haute</SelectItem>
+                    <SelectItem value="urgente">Urgente</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -165,9 +232,11 @@ export default function AdminMaintenance() {
                 {tasks.map((m) => (
                   <TableRow key={m.id}>
                     <TableCell className="font-medium">{m.vehicle_name}</TableCell>
-                    <TableCell className="capitalize">{m.type}</TableCell>
+                    <TableCell>
+                      {maintenanceTypeLabels[m.type] || m.type}
+                    </TableCell>
                     <TableCell className="max-w-[200px] truncate">{m.description || "-"}</TableCell>
-                    <TableCell><span className={`text-xs px-2 py-1 rounded-full ${priorityColors[m.priority] || ""}`}>{priorityLabels[m.priority] || m.priority}</span></TableCell>
+                    <TableCell><span className={`text-xs px-2 py-1 rounded-full ${priorityColors[m.priorite] || ""}`}>{priorityLabels[m.priorite] || m.priorite}</span></TableCell>
                     <TableCell>{m.scheduled_date ? new Date(m.scheduled_date).toLocaleDateString("fr-FR") : "-"}</TableCell>
                     <TableCell>
                       <Select value={m.status} onValueChange={(value) => handleStatusChange(m.id, value)} disabled={updatingStatusId === m.id}>
@@ -180,6 +249,18 @@ export default function AdminMaintenance() {
                           <SelectItem value="completed">Terminée</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(m.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

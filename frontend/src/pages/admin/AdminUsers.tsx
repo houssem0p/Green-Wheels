@@ -9,30 +9,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { getUsers, toggleUserStatus, changeUserRole, deleteUser } from "@/api/adminUsers";
 
 interface User {
   id: string; name: string; email: string; phone: string;
   role: string; status: string; joined: string; rentals: number;
 }
 
-const initialUsers: User[] = [
-  { id: "U001", name: "Karim Benali", email: "karim@mail.com", phone: "+213 555 111 111", role: "user", status: "active", joined: "2026-01-15", rentals: 12 },
-  { id: "U002", name: "Sarah Meziane", email: "sarah@mail.com", phone: "+213 555 222 222", role: "admin", status: "active", joined: "2025-12-01", rentals: 5 },
-  { id: "U003", name: "Ahmed Khelifi", email: "ahmed@mail.com", phone: "+213 555 333 333", role: "user", status: "suspended", joined: "2026-02-10", rentals: 3 },
-  { id: "U004", name: "Amina Rahal", email: "amina@mail.com", phone: "+213 555 444 444", role: "technician", status: "active", joined: "2026-01-20", rentals: 0 },
-  { id: "U005", name: "Yacine Larbi", email: "yacine@mail.com", phone: "+213 555 555 555", role: "manager", status: "active", joined: "2025-11-05", rentals: 8 },
-  { id: "U006", name: "Fatima Zahra", email: "fatima@mail.com", phone: "+213 555 666 666", role: "user", status: "active", joined: "2026-03-01", rentals: 15 },
-];
 
 const roleColors: Record<string, string> = {
   admin: "bg-destructive/10 text-destructive",
   user: "bg-primary/10 text-primary",
-  technician: "bg-chart-4/10 text-chart-4",
-  manager: "bg-chart-3/10 text-chart-3",
 };
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [detail, setDetail] = useState<User | null>(null);
@@ -44,19 +37,61 @@ export default function AdminUsers() {
     return matchSearch && matchRole;
   });
 
-  const handleSuspend = (id: string) => {
-    setUsers(users.map(u => u.id === id ? { ...u, status: u.status === "active" ? "suspended" : "active" } : u));
-    toast({ title: "Statut utilisateur mis à jour" });
+  const handleSuspend = async (id: string) => {
+    try {
+      await toggleUserStatus(id);
+      await fetchUsers(); // refresh data
+      toast({ title: "Statut utilisateur mis à jour" });
+    } catch (err) {
+      toast({ title: "Erreur serveur", variant: "destructive" });
+    }
+  };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteUser(id);
+      await fetchUsers();
+      toast({ title: "Utilisateur supprimé", variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Erreur serveur", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter(u => u.id !== id));
-    toast({ title: "Utilisateur supprimé", variant: "destructive" });
+  const handleRoleChange = async (id: string, role: string) => {
+    try {
+      await changeUserRole(id, role);
+      await fetchUsers();
+      toast({ title: "Rôle mis à jour" });
+    } catch (err) {
+      toast({ title: "Erreur serveur", variant: "destructive" });
+    }
   };
 
-  const handleRoleChange = (id: string, role: string) => {
-    setUsers(users.map(u => u.id === id ? { ...u, role } : u));
-    toast({ title: "Rôle mis à jour" });
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const data = await getUsers();
+
+      const mapped = data.map((u: any) => ({
+        id: u.id,
+        name: u.full_name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        status: u.is_active ? "active" : "suspended",
+        joined: u.created_at,
+        rentals: 0
+      }));
+
+      setUsers(mapped);
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Erreur lors du chargement", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,8 +121,6 @@ export default function AdminUsers() {
             <SelectItem value="all">Tous les rôles</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="user">Utilisateur</SelectItem>
-            <SelectItem value="technician">Technicien</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -117,8 +150,6 @@ export default function AdminUsers() {
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="user">Utilisateur</SelectItem>
-                        <SelectItem value="technician">Technicien</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Vehicles from "./pages/Vehicles";
@@ -27,6 +28,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminReservations from "./pages/admin/AdminReservations";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminMaintenance from "./pages/admin/AdminMaintenance";
+import Payment from "./pages/Payment";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +40,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/" element={<Layout><Index /></Layout>} />
               <Route path="/about" element={<Layout><About /></Layout>} />
@@ -51,8 +54,10 @@ const App = () => (
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
               <Route path="/contact" element={<Layout><Contact /></Layout>} />
               <Route path="/faq" element={<Layout><FAQ /></Layout>} />
+              <Route path="/payment" element={<Payment />} />  
+              <Route path="/payment-success" element={<PaymentSuccess />} />  
 
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="vehicles" element={<AdminVehicles />} />
                 <Route path="stations" element={<AdminStations />} />

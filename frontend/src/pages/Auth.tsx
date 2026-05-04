@@ -7,15 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading, refetchUser } = useAuth();
   const { theme } = useTheme();
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -30,52 +31,167 @@ export default function Auth() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(isAdmin ? "/admin" : "/dashboard", { replace: true });
+      const redirectPath = isAdmin ? "/admin" : "/dashboard";
+      navigate(redirectPath, { replace: true });
     }
   }, [authLoading, isAdmin, navigate, user]);
 
   const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      toast({ title: "Erreur", description: "Veuillez remplir tous les champs", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password: loginPassword,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur de connexion", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Bienvenue !" });
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ 
+          title: "Erreur de connexion", 
+          description: data.message || "Une erreur s'est produite",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      toast({ title: "Connexion réussie !", description: `Bienvenue ${data.user.full_name}` });
+
+      // Refresh user data and redirect
+      await refetchUser();
+
+      if (data.user.role === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({ 
+        title: "Erreur", 
+        description: "Erreur de connexion. Veuillez réessayer.",
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignup = async () => {
+    if (!signupName || !signupEmail || !signupPassword || !signupPhone) {
+      toast({ title: "Erreur", description: "Veuillez remplir tous les champs", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: signupEmail,
-      password: signupPassword,
-      options: {
-        data: { full_name: signupName, phone: signupPhone },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur d'inscription", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Compte créé !", description: "Vérifiez votre email pour confirmer votre compte." });
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: signupName,
+          email: signupEmail,
+          password: signupPassword,
+          phone: signupPhone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ 
+          title: "Erreur d'inscription", 
+          description: data.message || "Une erreur s'est produite",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      toast({ 
+        title: "Compte créé !", 
+        description: "Inscription réussie. Redirection..." 
+      });
+
+      // Clear form
+      setSignupName("");
+      setSignupEmail("");
+      setSignupPassword("");
+      setSignupPhone("");
+
+      // Refresh user data and redirect
+      await refetchUser();
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({ 
+        title: "Erreur", 
+        description: "Erreur d'inscription. Veuillez réessayer.",
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleForgot = async () => {
+    if (!forgotEmail) {
+      toast({ title: "Erreur", description: "Veuillez entrer votre email", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Email envoyé", description: "Consultez votre boîte mail." });
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ 
+          title: "Erreur", 
+          description: data.message || "Une erreur s'est produite",
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      toast({ 
+        title: "Email envoyé", 
+        description: data.message || "Consultez votre boîte mail pour réinitialiser votre mot de passe." 
+      });
+
+      setForgotEmail("");
+      setTab("login");
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      toast({ 
+        title: "Erreur", 
+        description: "Erreur lors de la demande. Veuillez réessayer.",
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 

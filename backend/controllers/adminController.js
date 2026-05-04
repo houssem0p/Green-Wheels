@@ -141,6 +141,22 @@ exports.deleteMaintenance = async (req, res) => {
     }
 };
 
+// 4. Update maintenance status
+
+exports.updateMaintenanceStatus = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { status } = req.body;
+
+        const query = "UPDATE maintenance SET status = ? WHERE id = ?";
+        await db.query(query, [status, id]);
+
+        res.json({ message: "Status updated" });
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
 
 // ===============================
 // VEHICLE CRUD
@@ -181,22 +197,12 @@ exports.createVehicle = async (req, res) => {
             longitude
         } = req.body;
 
-        if (
-            !code ||
-            !type ||
-            !price_hour ||
-            !autonomy ||
-            !station_id ||
-            !bettery_level ||
-            !status
-        ) {
-            return res.status(400).json({ message: "Missing required fields" });
-        }
+        const image = req.file ? req.file.filename : null;
 
         const query = `
-            INSERT INTO vehicles 
-            (code, type, price_hour, autonomy, station_id, bettery_level, status, latitude, longitude)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO vehicles
+            (code, type, price_hour, autonomy, station_id, bettery_level, status, latitude, longitude, image)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         const [result] = await db.query(query, [
@@ -208,7 +214,8 @@ exports.createVehicle = async (req, res) => {
             bettery_level,
             status,
             latitude || 0,
-            longitude || 0
+            longitude || 0,
+            image
         ]);
 
         res.json({

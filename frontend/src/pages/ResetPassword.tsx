@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Lock, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/ThemeProvider";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -26,14 +27,47 @@ export default function ResetPassword() {
   }, []);
 
   const handleReset = async () => {
+    if (!password) {
+      toast({ title: "Erreur", description: "Veuillez entrer un mot de passe", variant: "destructive" });
+      return;
+    }
+
+    const hash = window.location.hash;
+    const token = new URLSearchParams(hash.split("?")[1]).get("access_token");
+    
+    if (!token) {
+      toast({ title: "Erreur", description: "Token invalide", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const response = await fetch(`${API_URL}/auth/reset-password`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ title: "Erreur", description: data.message || "Une erreur s'est produite", variant: "destructive" });
+        return;
+      }
+
       toast({ title: "Mot de passe mis à jour !" });
-      navigate("/dashboard");
+      navigate("/auth");
+    } catch (error) {
+      console.error("Reset password error:", error);
+      toast({ title: "Erreur", description: "Erreur de réinitialisation", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 

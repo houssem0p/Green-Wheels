@@ -34,7 +34,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Session store (MySQL) ────────────────────────────────────────────────
-const DB_PORT = Number(process.env.DB_PORT) || 3308;
+const DB_PORT = Number(process.env.DB_PORT) || 3308 || 3306;
 
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST || '127.0.0.1',
@@ -63,6 +63,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/payments', paymentRoutes); // MOVED THIS BEFORE THE HEALTH CHECK
+app.use("/uploads", express.static("uploads"));  // to upload images for vehicles
 
 // ─── Health check ──────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

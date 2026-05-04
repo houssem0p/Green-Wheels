@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Search, Bike, Battery, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
+import {
+  getVehicles,
+  createVehicle,
+  deleteVehicle,
+  updateVehicle,
+} from "@/api/adminVehicles";
+import { getStations } from "@/api/stations";
+
 interface Vehicle {
   id: string;
   name: string;
@@ -22,33 +30,85 @@ interface Vehicle {
   station: string;
   status: string;
   autonomy: string;
+  image?: string;
 }
 
-const defaultVehicles: Vehicle[] = [
-  { id: "V001", name: "Vélo Urbain Pro", type: "Vélo électrique", price: 200, battery: 85, station: "Alger Centre", status: "disponible", autonomy: "45 km" },
-  { id: "V002", name: "Scooter City", type: "Scooter électrique", price: 350, battery: 92, station: "Bab El Oued", status: "loué", autonomy: "60 km" },
-  { id: "V003", name: "Vélo Classic", type: "Vélo classique", price: 100, battery: 100, station: "Hussein Dey", status: "maintenance", autonomy: "N/A" },
-  { id: "V004", name: "E-Bike Sport", type: "Vélo électrique", price: 280, battery: 78, station: "Kouba", status: "disponible", autonomy: "50 km" },
-  { id: "V005", name: "Scooter Express", type: "Scooter électrique", price: 400, battery: 95, station: "El Harrach", status: "disponible", autonomy: "70 km" },
-  { id: "V006", name: "Vélo Touring", type: "Vélo électrique", price: 250, battery: 60, station: "Alger Centre", status: "loué", autonomy: "40 km" },
-];
 
 const statusBadge: Record<string, "default" | "secondary" | "destructive"> = {
-  disponible: "default",
-  loué: "secondary",
-  maintenance: "destructive",
+  available: "default",
+  reserved: "secondary",
+  "Under Maintenance": "destructive",
 };
 
-const stations = ["Alger Centre", "Bab El Oued", "Hussein Dey", "Kouba", "El Harrach"];
+const typeLabels: Record<string, string> = {
+  scooter: "Scooter électrique",
+  bicycle: "Vélo classique",
+  "electric bicycle": "Vélo électrique"
+};
+
+const statusLabels: Record<string, string> = {
+  available: "Disponible",
+  reserved: "Réservé",
+  "Under Maintenance": "Maintenance"
+};
 
 export default function AdminVehicles() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(defaultVehicles);
+
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [stations, setStations] = useState<{ id: number; name: string }[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "", price: "", station: "", autonomy: "" });
+  const [form, setForm] = useState({
+    name: "",
+    type: "",
+    price: "",
+    station: "",
+    autonomy: "",
+    image: null as File | null
+  });
+  const [editForm, setEditForm] = useState({ name: "", type: "", price: "", station: "", autonomy: "" });
+  const [editOpen, setEditOpen] = useState(false);
   const { toast } = useToast();
+
+  const fetchVehicles = async () => {
+    try {
+      const data = await getVehicles();
+
+      const mapped = data.map((v: any) => ({
+        id: String(v.id),
+        name: v.code || "",
+        type: v.type || "",
+        price: v.price_hour || 0,
+        battery: v.bettery_level || 0,
+        station: v.station_name || "",
+        status: v.status || "available",
+        autonomy: `${v.autonomy || 0} km`,
+        image: v.image || null
+      }));
+      setVehicles(mapped);
+    } catch (err) {
+      toast({
+        title: "Erreur chargement véhicules",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+    // Fetch stations from API
+    const fetchStations = async () => {
+      try {
+        const data = await getStations();
+        setStations(data.map((s: any) => ({ id: s.id, name: s.name })));
+      } catch (err) {
+        toast({ title: "Erreur chargement stations", variant: "destructive" });
+      }
+    };
+    fetchStations();
+  }, []);
 
   const filtered = vehicles.filter((v) => {
     const matchSearch = v.name.toLowerCase().includes(search.toLowerCase()) || v.id.toLowerCase().includes(search.toLowerCase());
@@ -56,36 +116,136 @@ export default function AdminVehicles() {
     return matchSearch && matchStatus;
   });
 
-  const availableCount = vehicles.filter(v => v.status === "disponible").length;
-  const rentedCount = vehicles.filter(v => v.status === "loué").length;
-  const maintenanceCount = vehicles.filter(v => v.status === "maintenance").length;
+  const availableCount = vehicles.filter(v => v.status === "available").length;
+  const rentedCount = vehicles.filter(v => v.status === "reserved").length;
+  const maintenanceCount = vehicles.filter(v => v.status === "Under Maintenance").length;
 
-  const handleAdd = () => {
-    if (!form.name || !form.type || !form.price || !form.station) return;
-    const newVehicle: Vehicle = {
-      id: `V${String(vehicles.length + 1).padStart(3, "0")}`,
-      name: form.name,
-      type: form.type,
-      price: Number(form.price),
-      battery: 100,
-      station: form.station,
-      status: "disponible",
-      autonomy: form.autonomy || "N/A",
-    };
-    setVehicles([...vehicles, newVehicle]);
-    setForm({ name: "", type: "", price: "", station: "", autonomy: "" });
-    setAddOpen(false);
-    toast({ title: "Véhicule ajouté", description: `${newVehicle.name} a été ajouté à la flotte.` });
+  const handleAdd = async () => {
+    if (!form.name || !form.type || !form.price || !form.station) {
+      toast({
+        title: "Veuillez remplir tous les champs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await createVehicle({
+        code: form.name,
+        type: form.type,
+        price_hour: Number(form.price),
+        autonomy: Number(form.autonomy) || 0,
+        station_id: Number(form.station),
+        bettery_level: 100,
+        status: "available",
+        latitude: 0,
+        longitude: 0
+      });
+
+      await fetchVehicles();
+
+      setForm({
+        name: "",
+        type: "",
+        price: "",
+        station: "",
+        autonomy: "",
+        image: null
+      });
+      
+      setAddOpen(false);
+
+      toast({
+        title: "Véhicule ajouté"
+      });
+
+    } catch (err) {
+      console.error(err);
+
+      toast({
+        title: "Erreur ajout véhicule",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setVehicles(vehicles.filter(v => v.id !== id));
-    toast({ title: "Véhicule supprimé", variant: "destructive" });
+  // Open edit dialog and prefill form
+  const handleEditOpen = (vehicle: Vehicle) => {
+    setEditVehicle(vehicle);
+    setEditForm({
+      name: vehicle.name,
+      type: vehicle.type,
+      price: String(vehicle.price),
+      station: stations.find(s => s.name === vehicle.station)?.id ? String(stations.find(s => s.name === vehicle.station)!.id) : "",
+      autonomy: vehicle.autonomy.replace(" km", "")
+    });
+    setEditOpen(true);
   };
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    setVehicles(vehicles.map(v => v.id === id ? { ...v, status: newStatus } : v));
-    toast({ title: "Statut mis à jour" });
+  const handleEditSave = async () => {
+    if (!editVehicle) return;
+
+    try {
+      await updateVehicle(editVehicle.id, {
+        code: editForm.name,
+        type: editForm.type,
+        price_hour: Number(editForm.price),
+        autonomy: Number(editForm.autonomy),
+        station_id: Number(editForm.station),
+        bettery_level: editVehicle.battery,
+        status: editVehicle.status,
+        latitude: 0,
+        longitude: 0
+      });
+
+      await fetchVehicles();
+      setEditOpen(false);
+
+      toast({
+        title: "Véhicule modifié"
+      });
+
+    } catch (err) {
+      toast({
+        title: "Erreur modification véhicule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete vehicle
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteVehicle(id);
+      await fetchVehicles();
+      toast({ title: "Véhicule supprimé", variant: "destructive" });
+    } catch {
+      toast({ title: "Erreur suppression", variant: "destructive" });
+    }
+  };
+
+  // Change status
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const vehicle = vehicles.find(v => v.id === id);
+      if (!vehicle) return;
+      const station = stations.find(s => s.name === vehicle.station);
+      await updateVehicle(id, {
+        code: vehicle.name,
+        type: vehicle.type,
+        price_hour: vehicle.price,
+        autonomy: parseFloat(vehicle.autonomy),
+        station_id: station?.id,
+        bettery_level: vehicle.battery,
+        status: newStatus,
+        latitude: 0,
+        longitude: 0
+      });
+      await fetchVehicles();
+      toast({ title: "Statut mis à jour" });
+    } catch (err) {
+      toast({ title: "Erreur mise à jour", variant: "destructive" });
+    }
   };
 
   return (
@@ -105,11 +265,13 @@ export default function AdminVehicles() {
               <div className="space-y-2"><Label>Nom</Label><Input placeholder="Nom du véhicule" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-2"><Label>Type</Label>
                 <Select value={form.type} onValueChange={v => setForm({ ...form, type: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir le type" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type" />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Vélo électrique">Vélo électrique</SelectItem>
-                    <SelectItem value="Vélo classique">Vélo classique</SelectItem>
-                    <SelectItem value="Scooter électrique">Scooter électrique</SelectItem>
+                    <SelectItem value="electric bicycle">Vélo électrique</SelectItem>
+                    <SelectItem value="bicycle">Vélo classique</SelectItem>
+                    <SelectItem value="scooter">Scooter électrique</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -121,9 +283,26 @@ export default function AdminVehicles() {
                 <Select value={form.station} onValueChange={v => setForm({ ...form, station: v })}>
                   <SelectTrigger><SelectValue placeholder="Choisir la station" /></SelectTrigger>
                   <SelectContent>
-                    {stations.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {stations.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Image</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      image: e.target.files?.[0] || null
+                    })
+                  }
+                />
               </div>
             </div>
             <DialogFooter>
@@ -172,9 +351,9 @@ export default function AdminVehicles() {
           <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="disponible">Disponible</SelectItem>
-            <SelectItem value="loué">Loué</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
+            <SelectItem value="available">Disponible</SelectItem>
+            <SelectItem value="reserved">Réservé</SelectItem>
+            <SelectItem value="Under Maintenance">Maintenance</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -185,7 +364,7 @@ export default function AdminVehicles() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead><TableHead>Nom</TableHead><TableHead>Type</TableHead>
+                <TableHead>ID</TableHead><TableHead>Image</TableHead><TableHead>Nom</TableHead><TableHead>Type</TableHead>
                 <TableHead>Prix/h</TableHead><TableHead>Batterie</TableHead><TableHead>Autonomie</TableHead>
                 <TableHead>Station</TableHead><TableHead>État</TableHead><TableHead>Actions</TableHead>
               </TableRow>
@@ -194,8 +373,19 @@ export default function AdminVehicles() {
               {filtered.map((v) => (
                 <TableRow key={v.id}>
                   <TableCell className="font-mono text-xs">{v.id}</TableCell>
+                  <TableCell>
+                    {v.image ? (
+                      <img
+                        src={`http://localhost:5000/uploads/${v.image}`}
+                        alt={v.name}
+                        className="w-14 h-14 object-cover rounded-md"
+                      />
+                    ) : (
+                      "-"
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{v.name}</TableCell>
-                  <TableCell className="text-sm">{v.type}</TableCell>
+                  <TableCell className="text-sm">{typeLabels[v.type]}</TableCell>
                   <TableCell>{v.price} DA</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -210,18 +400,57 @@ export default function AdminVehicles() {
                   <TableCell>
                     <Select value={v.status} onValueChange={(val) => handleStatusChange(v.id, val)}>
                       <SelectTrigger className="h-7 w-[130px]">
-                        <Badge variant={statusBadge[v.status]}>{v.status}</Badge>
+                        <Badge variant={statusBadge[v.status]}>{statusLabels[v.status]}</Badge>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="disponible">Disponible</SelectItem>
-                        <SelectItem value="loué">Loué</SelectItem>
-                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                        <SelectItem value="available">Disponible</SelectItem>
+                        <SelectItem value="reserved">Réservé</SelectItem>
+                        <SelectItem value="Under Maintenance">Maintenance</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => setEditVehicle(v)}><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEditOpen(v)}><Edit className="h-4 w-4" /></Button>
+                            {/* Edit Vehicle Dialog */}
+                            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                              <DialogContent>
+                                <DialogHeader><DialogTitle>Modifier le véhicule</DialogTitle></DialogHeader>
+                                <div className="space-y-4">
+                                  <div className="space-y-2"><Label>Nom</Label><Input placeholder="Nom du véhicule" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} /></div>
+                                  <div className="space-y-2"><Label>Type</Label>
+                                    <Select value={editForm.type} onValueChange={v => setEditForm({ ...editForm, type: v })}>
+                                      <SelectTrigger><SelectValue placeholder="Choisir le type" /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="electric bicycle">Vélo électrique</SelectItem>
+                                        <SelectItem value="bicycle">Vélo classique</SelectItem>
+                                        <SelectItem value="scooter">Scooter électrique</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Prix (DA/h)</Label><Input type="number" placeholder="200" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} /></div>
+                                    <div className="space-y-2"><Label>Autonomie</Label><Input placeholder="45 km" value={editForm.autonomy} onChange={e => setEditForm({ ...editForm, autonomy: e.target.value })} /></div>
+                                  </div>
+                                  <div className="space-y-2"><Label>Station</Label>
+                                    <Select value={editForm.station} onValueChange={v => setEditForm({ ...editForm, station: v })}>
+                                      <SelectTrigger><SelectValue placeholder="Choisir la station" /></SelectTrigger>
+                                      <SelectContent>
+                                        {stations.map((s) => (
+                                          <SelectItem key={s.id} value={String(s.id)}>
+                                            {s.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <DialogClose asChild><Button variant="outline">Annuler</Button></DialogClose>
+                                  <Button onClick={handleEditSave}>Enregistrer</Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
                   </TableCell>
