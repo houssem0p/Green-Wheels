@@ -155,9 +155,76 @@ export default function Payment() {
       return;
     }
 
-    // Navigate to success page after validation
-    setLoading(false);
-    navigate("/payment-success", { state: { plan, reservation, payment: { paid_at: new Date().toISOString() } } });
+    try {
+      // Determine the amount and related IDs based on what we're paying for
+      let amount: number;
+      let subscription_id: number | null = null;
+      let ride_id: number | null = null;
+
+      if (plan) {
+        // Payment for a subscription plan
+        amount = typeof plan.price === 'string' ? parseFloat(plan.price) : Number(plan.price);
+        subscription_id = typeof plan.id === 'string' ? parseInt(plan.id) : Number(plan.id);
+      } else if (reservation) {
+        // Payment for a ride reservation
+        amount = reservation.total_price;
+        ride_id = typeof reservation.vehicle_id === 'string' ? parseInt(reservation.vehicle_id) : Number(reservation.vehicle_id);
+      } else {
+        setError("Impossible de déterminer le montant du paiement");
+        setLoading(false);
+        return;
+      }
+
+      // Call backend API to create the payment
+      const response = await fetch("http://localhost:5000/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          subscription_id,
+          ride_id,
+          amount,
+          method: "card",
+          status: "completed",
+        }),
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        let errorMessage = "Erreur lors du traitement du paiement";
+        
+        if (contentType && contentType.includes("application/json")) {
+          try {
+            const responseData = await response.json();
+            errorMessage = responseData.message || errorMessage;
+          } catch (e) {
+            console.error("Failed to parse error response:", e);
+          }
+        }
+        
+        setError(`${errorMessage} (${response.status})`);
+        setLoading(false);
+        return;
+      }
+
+      const responseData = await response.json();
+
+      // Navigate to success page with the created payment
+      setLoading(false);
+      navigate("/payment-success", { 
+        state: { 
+          plan, 
+          reservation, 
+          payment: responseData.payment 
+        } 
+      });
+    } catch (err) {
+      console.error("Payment error:", err);
+      setError(`Erreur: ${err instanceof Error ? err.message : 'Erreur réseau'}`);
+      setLoading(false);
+    }
   };
 
   return (

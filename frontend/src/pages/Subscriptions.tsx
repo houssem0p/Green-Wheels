@@ -3,35 +3,44 @@ import { Check, Zap, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
+    id: 1,
     name: "Horaire",
     price: "200",
+    price_display: "200 DA/heure",
     period: "heure",
     desc: "Idéal pour les courts trajets",
     features: ["1 heure de location", "Tous véhicules", "Assurance incluse", "Annulation gratuite"],
     popular: false,
   },
   {
+    id: 2,
     name: "Journalier",
     price: "750",
+    price_display: "750 DA/jour",
     period: "jour",
     desc: "Parfait pour une journée d'exploration",
     features: ["24 heures de location", "Tous véhicules", "Assurance incluse", "Annulation gratuite", "Support prioritaire"],
     popular: true,
   },
   {
+    id: 3,
     name: "Mensuel",
-    price: "5 000",
+    price: "5000",
+    price_display: "5 000 DA/mois",
     period: "mois",
     desc: "Pour les trajets quotidiens",
     features: ["Accès illimité", "Tous véhicules", "Assurance premium", "Annulation gratuite", "Support 24/7", "Tarifs réduits"],
     popular: false,
   },
   {
+    id: 4,
     name: "Annuel",
-    price: "40 000",
+    price: "40000",
+    price_display: "40 000 DA/an",
     period: "an",
     desc: "L'offre la plus avantageuse",
     features: ["Accès illimité", "Tous véhicules", "Assurance premium", "Annulation gratuite", "Support VIP", "Tarifs réduits", "2 mois gratuits"],
@@ -40,6 +49,22 @@ const plans = [
 ];
 
 export default function Subscriptions() {
+  const navigate = useNavigate();
+
+  const handleChoosePlan = (plan: typeof plans[0]) => {
+    // Navigate to payment page with plan data
+    navigate("/payment", {
+      state: {
+        plan: {
+          id: plan.id,
+          title: plan.name,
+          price: plan.price,
+          price_display: plan.price_display,
+        }
+      }
+    });
+  };
+
   return (
     <div className="py-16">
       <div className="container mx-auto px-4">
@@ -64,8 +89,7 @@ export default function Subscriptions() {
                   <CardTitle className="font-display text-xl">{p.name}</CardTitle>
                   <p className="text-sm text-muted-foreground">{p.desc}</p>
                   <div className="mt-4">
-                    <span className="text-4xl font-display font-bold text-primary">{p.price}</span>
-                    <span className="text-muted-foreground ml-1">DA/{p.period}</span>
+                    <span className="text-4xl font-display font-bold text-primary">{p.price_display}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
@@ -77,7 +101,11 @@ export default function Subscriptions() {
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full" variant={p.popular ? "default" : "outline"}>
+                  <Button 
+                    className="w-full" 
+                    variant={p.popular ? "default" : "outline"}
+                    onClick={() => handleChoosePlan(p)}
+                  >
                     Choisir ce plan
                   </Button>
                 </CardContent>

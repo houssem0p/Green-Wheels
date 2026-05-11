@@ -41,34 +41,35 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Routes>
-              <Route path="/" element={<Layout><Index /></Layout>} />
-              <Route path="/about" element={<Layout><About /></Layout>} />
-              <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
-              <Route path="/vehicles/:id" element={<Layout><VehicleDetails /></Layout>} />
-              <Route path="/map" element={<Layout><MapPage /></Layout>} />
-              <Route path="/subscriptions" element={<Layout><Subscriptions /></Layout>} />
-              <Route path="/auth" element={<Layout><Auth /></Layout>} />
-              <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
-              <Route path="/reservations/new" element={<Layout><NewReservation /></Layout>} />
-              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-              <Route path="/contact" element={<Layout><Contact /></Layout>} />
-              <Route path="/faq" element={<Layout><FAQ /></Layout>} />
-              <Route path="/payment" element={<Payment />} />  
-              <Route path="/payment-success" element={<PaymentSuccess />} />  
+           <Routes>
+  <Route path="/" element={<Layout><Index /></Layout>} />
+  <Route path="/about" element={<Layout><About /></Layout>} />
+  <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
+  <Route path="/vehicles/:id" element={<Layout><VehicleDetails /></Layout>} />
+  <Route path="/map" element={<Layout><MapPage /></Layout>} />
+  <Route path="/subscriptions" element={<Layout><Subscriptions /></Layout>} />
+  <Route path="/auth" element={<Layout><Auth /></Layout>} />
+  <Route path="/reset-password" element={<Layout><ResetPassword /></Layout>} />
+  <Route path="/reservations/new" element={<Layout><NewReservation /></Layout>} />
+  <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+  <Route path="/contact" element={<Layout><Contact /></Layout>} />
+  <Route path="/faq" element={<Layout><FAQ /></Layout>} />
+  <Route path="/payment" element={<Layout><Payment /></Layout>} />  
+  <Route path="/payment-success" element={<Layout><PaymentSuccess /></Layout>} />  
 
-              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="vehicles" element={<AdminVehicles />} />
-                <Route path="stations" element={<AdminStations />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="reservations" element={<AdminReservations />} />
-                <Route path="payments" element={<AdminPayments />} />
-                <Route path="maintenance" element={<AdminMaintenance />} />
-              </Route>
+  {/* Admin routes - keep these separate, not interfering with absolute paths */}
+  <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
+    <Route index element={<AdminDashboard />} />
+    <Route path="vehicles" element={<AdminVehicles />} />
+    <Route path="stations" element={<AdminStations />} />
+    <Route path="users" element={<AdminUsers />} />
+    <Route path="reservations" element={<AdminReservations />} />
+    <Route path="payments" element={<AdminPayments />} />
+    <Route path="maintenance" element={<AdminMaintenance />} />
+  </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+  <Route path="*" element={<NotFound />} />
+</Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

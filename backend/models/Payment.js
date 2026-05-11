@@ -41,12 +41,17 @@ class Payment {
       [user_id, subscription_id || null, ride_id || null, amount, method, status, paid_at]
     );
     
-    const [payment] = await db.execute(
+    // Get the inserted payment
+    const [payments] = await db.execute(
       'SELECT * FROM payments WHERE id = ?',
       [result.insertId]
     );
     
-    return payment[0];
+    if (!payments || payments.length === 0) {
+      throw new Error('Failed to create payment - record not found after insert');
+    }
+    
+    return payments[0];
   }
 
   static async getUserPayments(user_id) {
@@ -55,6 +60,14 @@ class Payment {
       [user_id]
     );
     return rows;
+  }
+
+  static async getPaymentById(payment_id) {
+    const [rows] = await db.execute(
+      'SELECT * FROM payments WHERE id = ?',
+      [payment_id]
+    );
+    return rows && rows.length > 0 ? rows[0] : null;
   }
 
   static async updateStatus(payment_id, status) {
