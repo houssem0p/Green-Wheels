@@ -37,19 +37,21 @@ interface Vehicle {
 const statusBadge: Record<string, "default" | "secondary" | "destructive"> = {
   available: "default",
   reserved: "secondary",
-  "Under Maintenance": "destructive",
+  in_use: "secondary",
+  under_maintenance: "destructive",
 };
 
 const typeLabels: Record<string, string> = {
   scooter: "Scooter électrique",
   bicycle: "Vélo classique",
-  "electric bicycle": "Vélo électrique"
+  "electric bicycle": "Vélo électrique",
 };
 
 const statusLabels: Record<string, string> = {
   available: "Disponible",
   reserved: "Réservé",
-  "Under Maintenance": "Maintenance"
+  in_use: "En cours",
+  under_maintenance: "Maintenance",
 };
 
 export default function AdminVehicles() {
@@ -75,23 +77,24 @@ export default function AdminVehicles() {
   const fetchVehicles = async () => {
     try {
       const data = await getVehicles();
-
-      const mapped = data.map((v: any) => ({
+      // adminController returns array directly
+      const list = Array.isArray(data) ? data : data.vehicles || [];
+      const mapped = list.map((v: any) => ({
         id: String(v.id),
         name: v.code || "",
         type: v.type || "",
-        price: v.price_hour || 0,
-        battery: v.bettery_level || 0,
+        price: v.price || 0,          // real column name
+        battery: v.battery_level || 0, // real column name
         station: v.station_name || "",
         status: v.status || "available",
-        autonomy: `${v.autonomy || 0} km`,
-        image: v.image || null
+        autonomy: "—",               // not stored in DB
+        image: v.image || null,
       }));
       setVehicles(mapped);
     } catch (err) {
       toast({
         title: "Erreur chargement véhicules",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -117,15 +120,12 @@ export default function AdminVehicles() {
   });
 
   const availableCount = vehicles.filter(v => v.status === "available").length;
-  const rentedCount = vehicles.filter(v => v.status === "reserved").length;
-  const maintenanceCount = vehicles.filter(v => v.status === "Under Maintenance").length;
+  const rentedCount = vehicles.filter(v => v.status === "reserved" || v.status === "in_use").length;
+  const maintenanceCount = vehicles.filter(v => v.status === "under_maintenance").length;
 
   const handleAdd = async () => {
     if (!form.name || !form.type || !form.price || !form.station) {
-      toast({
-        title: "Veuillez remplir tous les champs",
-        variant: "destructive"
-      });
+      toast({ title: "Veuillez remplir tous les champs", variant: "destructive" });
       return;
     }
 
@@ -133,39 +133,21 @@ export default function AdminVehicles() {
       await createVehicle({
         code: form.name,
         type: form.type,
-        price_hour: Number(form.price),
-        autonomy: Number(form.autonomy) || 0,
+        price: Number(form.price),         // real column name
         station_id: Number(form.station),
-        bettery_level: 100,
+        battery_level: 100,                // real column name
         status: "available",
         latitude: 0,
-        longitude: 0
+        longitude: 0,
       });
 
       await fetchVehicles();
-
-      setForm({
-        name: "",
-        type: "",
-        price: "",
-        station: "",
-        autonomy: "",
-        image: null
-      });
-      
+      setForm({ name: "", type: "", price: "", station: "", autonomy: "", image: null });
       setAddOpen(false);
-
-      toast({
-        title: "Véhicule ajouté"
-      });
-
+      toast({ title: "Véhicule ajouté" });
     } catch (err) {
       console.error(err);
-
-      toast({
-        title: "Erreur ajout véhicule",
-        variant: "destructive"
-      });
+      toast({ title: "Erreur ajout véhicule", variant: "destructive" });
     }
   };
 
@@ -189,27 +171,19 @@ export default function AdminVehicles() {
       await updateVehicle(editVehicle.id, {
         code: editForm.name,
         type: editForm.type,
-        price_hour: Number(editForm.price),
-        autonomy: Number(editForm.autonomy),
+        price: Number(editForm.price),       // real column name
         station_id: Number(editForm.station),
-        bettery_level: editVehicle.battery,
+        battery_level: editVehicle.battery,  // real column name
         status: editVehicle.status,
         latitude: 0,
-        longitude: 0
+        longitude: 0,
       });
 
       await fetchVehicles();
       setEditOpen(false);
-
-      toast({
-        title: "Véhicule modifié"
-      });
-
+      toast({ title: "Véhicule modifié" });
     } catch (err) {
-      toast({
-        title: "Erreur modification véhicule",
-        variant: "destructive"
-      });
+      toast({ title: "Erreur modification véhicule", variant: "destructive" });
     }
   };
 
@@ -233,13 +207,12 @@ export default function AdminVehicles() {
       await updateVehicle(id, {
         code: vehicle.name,
         type: vehicle.type,
-        price_hour: vehicle.price,
-        autonomy: parseFloat(vehicle.autonomy),
+        price: vehicle.price,            // real column name
         station_id: station?.id,
-        bettery_level: vehicle.battery,
+        battery_level: vehicle.battery,  // real column name
         status: newStatus,
         latitude: 0,
-        longitude: 0
+        longitude: 0,
       });
       await fetchVehicles();
       toast({ title: "Statut mis à jour" });
@@ -353,7 +326,8 @@ export default function AdminVehicles() {
             <SelectItem value="all">Tous les statuts</SelectItem>
             <SelectItem value="available">Disponible</SelectItem>
             <SelectItem value="reserved">Réservé</SelectItem>
-            <SelectItem value="Under Maintenance">Maintenance</SelectItem>
+            <SelectItem value="in_use">En cours</SelectItem>
+            <SelectItem value="under_maintenance">Maintenance</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -399,13 +373,16 @@ export default function AdminVehicles() {
                   <TableCell>{v.station}</TableCell>
                   <TableCell>
                     <Select value={v.status} onValueChange={(val) => handleStatusChange(v.id, val)}>
-                      <SelectTrigger className="h-7 w-[130px]">
-                        <Badge variant={statusBadge[v.status]}>{statusLabels[v.status]}</Badge>
+                      <SelectTrigger className="h-7 w-[140px]">
+                        <Badge variant={statusBadge[v.status] || "secondary"}>
+                          {statusLabels[v.status] || v.status}
+                        </Badge>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="available">Disponible</SelectItem>
                         <SelectItem value="reserved">Réservé</SelectItem>
-                        <SelectItem value="Under Maintenance">Maintenance</SelectItem>
+                        <SelectItem value="in_use">En cours</SelectItem>
+                        <SelectItem value="under_maintenance">Maintenance</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>

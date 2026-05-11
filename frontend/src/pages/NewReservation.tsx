@@ -1,19 +1,43 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Clock, MapPin, Bike, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin, Bike, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Vehicle = Tables<"vehicles">;
-type Station = Tables<"stations">;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+interface Vehicle {
+  id: number;
+  code: string;
+  type: string;
+  price: number;
+  battery_level: number;
+  status: string;
+  station_id: number;
+  station_name?: string;
+  station_address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface Station {
+  id: number;
+  name: string;
+  address: string;
+  available_slots: number;
+}
+
+const typeLabels: Record<string, string> = {
+  scooter: "Scooter électrique",
+  bicycle: "Vélo classique",
+  "electric bicycle": "Vélo électrique",
+};
 
 export default function NewReservation() {
   const navigate = useNavigate();
@@ -25,9 +49,8 @@ export default function NewReservation() {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
-  const [selectedVehicle, setSelectedVehicle] = useState<string>(preselectedVehicleId || "");
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>(preselectedVehicleId || "");
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [duration, setDuration] = useState("1");
@@ -39,47 +62,94 @@ export default function NewReservation() {
   }, [authLoading, user, navigate]);
 
   useEffect(() => {
-    async function fetchData() {
-      const [vRes, sRes] = await Promise.all([
-        supabase.from("vehicles").select("*").eq("status", "available"),
-        supabase.from("stations").select("*").eq("status", "active"),
-      ]);
-      setVehicles(vRes.data || []);
-      setStations(sRes.data || []);
-      setLoading(false);
-    }
+    const fetchData = async () => {
+      try {
+        const [vRes, sRes] = await Promise.all([
+          fetch(`${API_URL}/vehicles?status=available`, { credentials: "include" }),
+          fetch(`${API_URL}/stations`, { credentials: "include" }),
+        ]);
+
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          // Backend returns { success, vehicles } from vehicleController
+          const list: Vehicle[] = (vData.vehicles || vData || []).filter(
+            (v: Vehicle) => v.status === "available"
+          );
+          setVehicles(list);
+        }
+
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          setStations(Array.isArray(sData) ? sData : sData.stations || []);
+        }
+      } catch (err) {
+        toast.error("Impossible de charger les données.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, []);
 
-  const vehicle = vehicles.find((v) => v.id === selectedVehicle);
-  const station = vehicle ? stations.find((s) => s.id === vehicle.station_id) : null;
+  const vehicle = vehicles.find((v) => String(v.id) === selectedVehicleId);
+  const station = vehicle
+    ? stations.find((s) => s.id === vehicle.station_id)
+    : null;
+
   const durationHours = parseInt(duration) || 1;
-  const totalPrice = vehicle ? vehicle.price_per_hour * durationHours : 0;
+  const pricePerHour = vehicle ? Number(vehicle.price) : 0;
+  const totalPrice = pricePerHour * durationHours;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !vehicle || !startDate) return;
 
     setSubmitting(true);
-    const start = new Date(`${startDate}T${startTime}`);
-    const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+    try {
+      const startDatetime = new Date(`${startDate}T${startTime}`);
 
-    const { error } = await supabase.from("reservations").insert({
-      user_id: user.id,
-      vehicle_id: vehicle.id,
-      station_id: vehicle.station_id,
-      start_date: start.toISOString(),
-      end_date: end.toISOString(),
-      duration_hours: durationHours,
-      total_price: totalPrice,
-    });
+      // Create the ride in DB — this also marks vehicle as 'reserved'
+      const response = await fetch(`${API_URL}/rides`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vehicle_id: vehicle.id,
+          start_station_id: vehicle.station_id,
+          started_at: startDatetime.toISOString(),
+          duration_min: durationHours * 60,
+          base_price: totalPrice,
+          final_price: totalPrice,
+        }),
+      });
 
-    setSubmitting(false);
-    if (error) {
-      toast.error("Erreur lors de la réservation: " + error.message);
-    } else {
-      setSuccess(true);
-      toast.success("Réservation confirmée !");
+      if (!response.ok) {
+        const err = await response.json();
+        toast.error(err.message || "Erreur lors de la réservation");
+        setSubmitting(false);
+        return;
+      }
+
+      const { ride } = await response.json();
+
+      // Navigate to payment page exactly like Subscriptions does
+      navigate("/payment", {
+        state: {
+          reservation: {
+            ride_id: ride.id,
+            vehicle_id: vehicle.id,
+            vehicle_name: `${typeLabels[vehicle.type] || vehicle.type} — ${vehicle.code}`,
+            duration_hours: durationHours,
+            total_price: totalPrice,
+            start_date: startDatetime.toISOString(),
+            end_date: new Date(startDatetime.getTime() + durationHours * 3600000).toISOString(),
+          },
+        },
+      });
+    } catch (err) {
+      toast.error("Erreur réseau. Veuillez réessayer.");
+      setSubmitting(false);
     }
   };
 
@@ -91,37 +161,13 @@ export default function NewReservation() {
     );
   }
 
-  if (success) {
-    return (
-      <div className="py-16">
-        <div className="container mx-auto px-4 max-w-lg text-center">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-            <CheckCircle className="h-20 w-20 text-primary mx-auto mb-6" />
-          </motion.div>
-          <h1 className="font-display text-3xl font-bold mb-4">Réservation confirmée !</h1>
-          <p className="text-muted-foreground mb-2">
-            <strong>{vehicle?.name}</strong> — {durationHours}h — {totalPrice} DA
-          </p>
-          <p className="text-muted-foreground mb-8">
-            {startDate} à {startTime}
-          </p>
-          <div className="flex gap-4 justify-center">
-            <Link to="/dashboard">
-              <Button>Voir mes réservations</Button>
-            </Link>
-            <Link to="/vehicles">
-              <Button variant="outline">Retour aux véhicules</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="py-16">
       <div className="container mx-auto px-4 max-w-2xl">
-        <Link to="/vehicles" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8">
+        <Link
+          to="/vehicles"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
+        >
           <ArrowLeft className="h-4 w-4" /> Retour aux véhicules
         </Link>
 
@@ -129,7 +175,7 @@ export default function NewReservation() {
           <h1 className="font-display text-3xl font-bold mb-8">Nouvelle réservation</h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Vehicle selection */}
+            {/* Vehicle Selection */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -140,22 +186,32 @@ export default function NewReservation() {
                 {vehicles.length === 0 ? (
                   <p className="text-muted-foreground">Aucun véhicule disponible pour le moment.</p>
                 ) : (
-                  <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+                  <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Choisir un véhicule" />
                     </SelectTrigger>
                     <SelectContent>
                       {vehicles.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name} — {v.type} — {v.price_per_hour} DA/h
+                        <SelectItem key={v.id} value={String(v.id)}>
+                          {typeLabels[v.type] || v.type} — {v.code} — {Number(v.price)} DA/h
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
-                {vehicle && station && (
-                  <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" /> Station : {station.name} — {station.address}
+
+                {vehicle && (
+                  <div className="mt-4 space-y-2">
+                    {station && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        Station : {station.name} — {station.address}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">Batterie :</span>
+                      {vehicle.battery_level}%
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -165,7 +221,7 @@ export default function NewReservation() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="h-5 w-5 text-primary" /> Date & Heure
+                  <Calendar className="h-5 w-5 text-primary" /> Date &amp; Heure
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -224,11 +280,15 @@ export default function NewReservation() {
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Véhicule</span>
-                      <span className="font-medium">{vehicle.name}</span>
+                      <span className="font-medium">
+                        {typeLabels[vehicle.type] || vehicle.type} — {vehicle.code}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date</span>
-                      <span className="font-medium">{startDate} à {startTime}</span>
+                      <span className="font-medium">
+                        {startDate} à {startTime}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Durée</span>
@@ -236,11 +296,15 @@ export default function NewReservation() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tarif</span>
-                      <span className="font-medium">{vehicle.price_per_hour} DA × {durationHours}h</span>
+                      <span className="font-medium">
+                        {pricePerHour} DA × {durationHours}h
+                      </span>
                     </div>
                     <div className="border-t border-border pt-2 mt-2 flex justify-between">
                       <span className="font-semibold">Total</span>
-                      <span className="font-display font-bold text-primary text-lg">{totalPrice} DA</span>
+                      <span className="font-display font-bold text-primary text-lg">
+                        {totalPrice} DA
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -251,10 +315,12 @@ export default function NewReservation() {
               type="submit"
               size="lg"
               className="w-full"
-              disabled={!selectedVehicle || !startDate || submitting}
+              disabled={!selectedVehicleId || !startDate || submitting}
             >
               {submitting ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Réservation en cours...</>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Réservation en cours...
+                </>
               ) : (
                 `Confirmer la réservation — ${totalPrice} DA`
               )}

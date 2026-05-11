@@ -20,6 +20,7 @@ const adminRoutes = require('./routes/admin');
 const stationRoutes = require('./routes/stationRoutes');
 const paymentRoutes = require('./routes/payments');
 const vehicleRoutes = require('./routes/vehicles');
+const rideRoutes = require('./routes/rides');
 const app = express();
 
 // ─── Security & parsing ───────────────────────────────────────────────────
@@ -62,9 +63,10 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/stations', stationRoutes);
-app.use('/api/payments', paymentRoutes); // MOVED THIS BEFORE THE HEALTH CHECK
-app.use("/uploads", express.static("uploads"));  // to upload images for vehicles
+app.use('/api/payments', paymentRoutes);
+app.use("/uploads", express.static("uploads"));
 app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/rides', rideRoutes);
 // ─── Health check ──────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

@@ -8,8 +8,13 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth");
 // All routes protected
 
 // ===============================
+// DASHBOARD STATS
+// ===============================
+router.get("/dashboard/stats", isAuthenticated, isAdmin, adminController.getDashboardStats);
+
+// ===============================
 // USER MANAGEMENT ROUTES
-// ===============================  
+// ===============================
 
 router.get("/users", isAuthenticated, isAdmin, adminController.getAllUsers);
 

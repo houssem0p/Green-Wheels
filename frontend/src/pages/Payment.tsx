@@ -11,7 +11,8 @@ interface Plan {
 }
 
 interface Reservation {
-  vehicle_id: string;
+  ride_id?: number;
+  vehicle_id: string | number;
   vehicle_name: string;
   duration_hours: number;
   total_price: number;
@@ -168,7 +169,7 @@ export default function Payment() {
       } else if (reservation) {
         // Payment for a ride reservation
         amount = reservation.total_price;
-        ride_id = typeof reservation.vehicle_id === 'string' ? parseInt(reservation.vehicle_id) : Number(reservation.vehicle_id);
+        ride_id = reservation.ride_id ?? null;
       } else {
         setError("Impossible de déterminer le montant du paiement");
         setLoading(false);
